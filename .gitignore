@@ -1,0 +1,185 @@
+# Binaries for programs and plugins
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+bin/
+*.out
+
+# Test binary, built with `go test -c`
+*.test
+
+# Output of the go coverage tool
+*.cover
+*.coverprofile
+
+# Go workspace file
+go.work
+
+# Dependency directories
+vendor/
+
+# Environment files (contains secrets)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+*.log
+logs/
+*.log.*
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+*.iml
+.project
+.classpath
+.settings/
+
+# OS files
+Thumbs.db
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+
+# Docker volumes (if using named volumes locally)
+postgres_data/
+data/
+
+# Build artifacts
+dist/
+build/
+
+# Documentation builds
+site/
+docs/_build/
+
+# Credentials and keys
+*.pem
+*.key
+*.crt
+*.p12
+credentials.json
+secrets.yaml
+secrets.json
+
+# Local configuration overrides
+config.local.yaml
+config.local.json
+
+# Coverage reports
+coverage.html
+coverage.xml
+coverage.txt
+
+# Air live reload (if used)
+tmp/
+.air.toml
+
+# Migration temporary files
+*.sql.tmp
+
+# Generated protobuf files (optional - some prefer to commit these)
+# Uncomment if you want to gitignore generated proto files:
+# api/proto/*.pb.go
+# api/proto/*_grpc.pb.go
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+Desktop.ini
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+
+# JetBrains IDEs
+.idea/
+*.iws
+*.iml
+*.ipr
+out/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+[._]*.s[a-v][a-z]
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# Emacs
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+*.elc
+auto-save-list
+tramp
+
+# Node.js (if you add a web UI later)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Python (if you add Python tools)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+ENV/
+env/
+
+# Go sum backup
+go.sum.backup
+
+# Claude Code plan files (optional - these can be useful to commit)
+# Uncomment if you don't want to track plans:
+# .claude/
+
+# Local testing scripts
+test.sh
+local-test.sh
+debug.sh

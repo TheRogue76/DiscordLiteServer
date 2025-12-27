@@ -1,0 +1,77 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: discordlite_postgres
+    environment:
+      POSTGRES_USER: discordlite
+      POSTGRES_PASSWORD: discordlite_password
+      POSTGRES_DB: discordlite_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U discordlite"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - discordlite_network
+
+  # Discord Lite Server Application
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: discordlite_server
+    ports:
+      - "8080:8080"   # HTTP port
+      - "50051:50051" # gRPC port
+    environment:
+      # Server Configuration
+      HTTP_PORT: 8080
+      GRPC_PORT: 50051
+      SERVER_HOST: 0.0.0.0
+      ENVIRONMENT: development
+
+      # Discord OAuth Configuration (replace with your values)
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
+      DISCORD_REDIRECT_URI: http://localhost:8080/auth/callback
+      DISCORD_OAUTH_SCOPES: identify email guilds
+
+      # PostgreSQL Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USER: discordlite
+      DB_PASSWORD: discordlite_password
+      DB_NAME: discordlite_db
+      DB_SSLMODE: disable
+      DB_MAX_OPEN_CONNS: 25
+      DB_MAX_IDLE_CONNS: 5
+
+      # Security Configuration
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:-0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef}
+      SESSION_EXPIRY_HOURS: 24
+      STATE_EXPIRY_MINUTES: 10
+
+      # Logging Configuration
+      LOG_LEVEL: debug
+      LOG_FORMAT: console
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - discordlite_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  discordlite_network:
+    driver: bridge

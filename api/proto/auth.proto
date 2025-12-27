@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package discord.auth;
+
+option go_package = "github.com/parsascontentcorner/discordliteserver/api/proto;authpb";
+
+// AuthService handles Discord OAuth authentication
+service AuthService {
+  // InitAuth initiates the OAuth flow and returns the Discord authorization URL
+  rpc InitAuth(InitAuthRequest) returns (InitAuthResponse);
+
+  // GetAuthStatus checks the current authentication status for a session
+  rpc GetAuthStatus(GetAuthStatusRequest) returns (GetAuthStatusResponse);
+
+  // RevokeAuth revokes authentication for a session
+  rpc RevokeAuth(RevokeAuthRequest) returns (RevokeAuthResponse);
+}
+
+// InitAuthRequest initiates an OAuth authentication flow
+message InitAuthRequest {
+  // Optional: Client can provide their own session ID to track auth flow
+  // If not provided, server will generate one
+  string session_id = 1;
+}
+
+// InitAuthResponse contains the OAuth URL and session tracking info
+message InitAuthResponse {
+  // Authorization URL to redirect user to Discord
+  string auth_url = 1;
+
+  // Session ID to track this auth flow
+  string session_id = 2;
+
+  // OAuth state parameter (for client-side validation if needed)
+  string state = 3;
+}
+
+// GetAuthStatusRequest requests the current authentication status
+message GetAuthStatusRequest {
+  // Session ID from InitAuth
+  string session_id = 1;
+}
+
+// GetAuthStatusResponse returns the current authentication status
+message GetAuthStatusResponse {
+  // Current authentication status
+  AuthStatus status = 1;
+
+  // User information (only populated when status is AUTHENTICATED)
+  optional UserInfo user = 2;
+
+  // Error message if status is FAILED
+  optional string error_message = 3;
+}
+
+// AuthStatus represents the state of an authentication session
+enum AuthStatus {
+  AUTH_STATUS_UNSPECIFIED = 0;
+  AUTH_STATUS_PENDING = 1;       // Waiting for user to complete OAuth
+  AUTH_STATUS_AUTHENTICATED = 2;  // Successfully authenticated
+  AUTH_STATUS_FAILED = 3;         // Authentication failed
+}
+
+// UserInfo contains Discord user information
+message UserInfo {
+  string discord_id = 1;
+  string username = 2;
+  string discriminator = 3;
+  string avatar = 4;
+  string email = 5;
+}
+
+// RevokeAuthRequest revokes authentication for a session
+message RevokeAuthRequest {
+  string session_id = 1;
+}
+
+// RevokeAuthResponse confirms authentication revocation
+message RevokeAuthResponse {
+  bool success = 1;
+  string message = 2;
+}
