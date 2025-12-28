@@ -3,9 +3,13 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
+	"github.com/golang-migrate/migrate/v4"
+	"github.com/golang-migrate/migrate/v4/database/postgres"
+	_ "github.com/golang-migrate/migrate/v4/source/file"
 	_ "github.com/lib/pq" // PostgreSQL driver
 	"go.uber.org/zap"
 
@@ -72,22 +76,51 @@ func (db *DB) Health(ctx context.Context) error {
 	return nil
 }
 
-// RunMigrations runs database migrations from the migrations folder
-func (db *DB) RunMigrations(migrationPath string) error {
-	db.logger.Info("running database migrations", zap.String("path", migrationPath))
+// RunMigrations runs database migrations using golang-migrate library
+func (db *DB) RunMigrations(migrationsPath string) error {
+	db.logger.Info("running database migrations with golang-migrate", zap.String("path", migrationsPath))
 
-	// Read migration file
-	content, err := readMigrationFile(migrationPath)
+	// Create postgres driver instance from existing connection
+	driver, err := postgres.WithInstance(db.DB, &postgres.Config{
+		MigrationsTable: "schema_migrations",
+	})
 	if err != nil {
-		return fmt.Errorf("failed to read migration file: %w", err)
+		return fmt.Errorf("failed to create postgres driver instance: %w", err)
 	}
 
-	// Execute migration
-	if _, err := db.Exec(content); err != nil {
-		return fmt.Errorf("failed to execute migration: %w", err)
+	// Create migrate instance with file source
+	m, err := migrate.NewWithDatabaseInstance(
+		fmt.Sprintf("file://%s", migrationsPath),
+		"postgres",
+		driver,
+	)
+	if err != nil {
+		return fmt.Errorf("failed to create migrate instance: %w", err)
 	}
 
-	db.logger.Info("database migrations completed successfully")
+	// Run all pending migrations
+	if err := m.Up(); err != nil {
+		// ErrNoChange is not an error - it means we're already up to date
+		if errors.Is(err, migrate.ErrNoChange) {
+			db.logger.Info("database schema is already up to date")
+			return nil
+		}
+		return fmt.Errorf("failed to run migrations: %w", err)
+	}
+
+	// Get current version
+	version, dirty, err := m.Version()
+	if err != nil && !errors.Is(err, migrate.ErrNilVersion) {
+		db.logger.Warn("failed to get migration version", zap.Error(err))
+	} else if errors.Is(err, migrate.ErrNilVersion) {
+		db.logger.Info("no migrations have been applied yet")
+	} else {
+		db.logger.Info("database migrations completed successfully",
+			zap.Uint("version", version),
+			zap.Bool("dirty", dirty),
+		)
+	}
+
 	return nil
 }
 

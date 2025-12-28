@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -120,19 +121,16 @@ func main() {
 	log.Info("servers shut down successfully")
 }
 
-// runMigrations runs database migrations
+// runMigrations runs database migrations using golang-migrate library
 func runMigrations(db *database.DB, log *zap.Logger) error {
 	log.Info("running database migrations")
 
-	// Read migration file
-	migrationSQL, err := os.ReadFile("internal/database/migrations/001_initial.sql")
-	if err != nil {
-		return err
-	}
+	// Path to migrations directory (relative to binary execution location)
+	migrationsPath := "internal/database/migrations"
 
-	// Execute migration
-	if _, err := db.Exec(string(migrationSQL)); err != nil {
-		return err
+	// Run migrations using the migrate library
+	if err := db.RunMigrations(migrationsPath); err != nil {
+		return fmt.Errorf("migration failed: %w", err)
 	}
 
 	log.Info("database migrations completed successfully")
