@@ -1,4 +1,4 @@
-.PHONY: proto build run test clean migrate install-tools docker-build docker-up docker-down help
+.PHONY: proto build run test clean migrate install-tools docker-build docker-up docker-down help fmt fmt-check lint ci
 
 # Variables
 BINARY_NAME=discordliteserver
@@ -18,6 +18,12 @@ help:
 	@echo "  docker-build   - Build Docker image"
 	@echo "  docker-up      - Start services with docker-compose"
 	@echo "  docker-down    - Stop services with docker-compose"
+	@echo ""
+	@echo "CI/Quality targets:"
+	@echo "  fmt            - Format code with go fmt"
+	@echo "  fmt-check      - Check if code is formatted (CI mode)"
+	@echo "  lint           - Run golangci-lint"
+	@echo "  ci             - Run all CI checks locally (fmt-check, lint, test)"
 
 # Install required tools (protoc, protoc-gen-go, etc.)
 install-tools:
@@ -114,10 +120,28 @@ fmt:
 	@echo "Formatting code..."
 	go fmt ./...
 
+# Check code formatting (CI mode)
+fmt-check:
+	@echo "Checking code formatting..."
+	@unformatted=$$(gofmt -l .); \
+	if [ -n "$$unformatted" ]; then \
+		echo "The following files are not formatted:"; \
+		echo "$$unformatted"; \
+		echo ""; \
+		echo "Please run 'make fmt' to format your code."; \
+		exit 1; \
+	fi
+	@echo "All files are properly formatted!"
+
 # Run linter
 lint:
 	@echo "Running linter..."
-	golangci-lint run
+	golangci-lint run --timeout=5m --config=.golangci.yml
+
+# Run all CI checks locally
+ci: fmt-check lint test
+	@echo ""
+	@echo "✅ All CI checks passed!"
 
 # Default target
 all: proto build
