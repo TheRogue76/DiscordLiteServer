@@ -2,7 +2,7 @@
 -- PostgreSQL 13+
 
 -- Users table: stores basic Discord user information
-CREATE TABLE IF NOT EXISTS users (
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
     discord_id VARCHAR(255) UNIQUE NOT NULL,
     username VARCHAR(255) NOT NULL,
@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX idx_users_discord_id ON users(discord_id);
 
 -- OAuth tokens table: stores encrypted OAuth credentials
-CREATE TABLE IF NOT EXISTS oauth_tokens (
+CREATE TABLE oauth_tokens (
     id BIGSERIAL PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     access_token TEXT NOT NULL,           -- Encrypted with AES-256-GCM
@@ -33,7 +33,7 @@ CREATE INDEX idx_oauth_tokens_user_id ON oauth_tokens(user_id);
 CREATE INDEX idx_oauth_tokens_expiry ON oauth_tokens(expiry);
 
 -- OAuth states table: temporary storage for OAuth state validation (CSRF protection)
-CREATE TABLE IF NOT EXISTS oauth_states (
+CREATE TABLE oauth_states (
     state VARCHAR(255) PRIMARY KEY,
     session_id VARCHAR(255) NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -44,7 +44,7 @@ CREATE INDEX idx_oauth_states_expires_at ON oauth_states(expires_at);
 CREATE INDEX idx_oauth_states_session_id ON oauth_states(session_id);
 
 -- Auth sessions table: maps session IDs to users for gRPC clients
-CREATE TABLE IF NOT EXISTS auth_sessions (
+CREATE TABLE auth_sessions (
     session_id VARCHAR(255) PRIMARY KEY,
     user_id BIGINT REFERENCES users(id) ON DELETE CASCADE,
     auth_status VARCHAR(50) NOT NULL,     -- 'pending', 'authenticated', 'failed'
