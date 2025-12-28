@@ -76,11 +76,11 @@ func SetupTestDB(ctx context.Context) (*database.DB, func(), error) {
 
 	// Run migrations - try multiple paths since tests run from different directories
 	migrationPaths := []string{
-		"internal/database/migrations",  // From project root
-		"../database/migrations",         // From internal/auth or similar
-		"../../database/migrations",      // From nested packages
-		"database/migrations",            // From internal/
-		"migrations",                     // From internal/database itself
+		"internal/database/migrations", // From project root
+		"../database/migrations",       // From internal/auth or similar
+		"../../database/migrations",    // From nested packages
+		"database/migrations",          // From internal/
+		"migrations",                   // From internal/database itself
 	}
 
 	var migrationErr error

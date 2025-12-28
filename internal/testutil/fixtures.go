@@ -177,9 +177,9 @@ func GenerateTestConfig() *config.Config {
 			MaxIdleConns: 2,
 		},
 		Security: config.SecurityConfig{
-			TokenEncryptionKey:  GenerateEncryptionKey(),
-			SessionExpiryHours:  24,
-			StateExpiryMinutes:  10,
+			TokenEncryptionKey: GenerateEncryptionKey(),
+			SessionExpiryHours: 24,
+			StateExpiryMinutes: 10,
 		},
 		Logging: config.LoggingConfig{
 			Level:  "debug",

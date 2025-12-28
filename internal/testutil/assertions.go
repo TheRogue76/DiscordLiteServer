@@ -4,8 +4,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/assert"
 	"github.com/parsascontentcorner/discordliteserver/internal/models"
+	"github.com/stretchr/testify/assert"
 )
 
 // AssertUserEqual performs a deep comparison of two User objects.
