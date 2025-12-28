@@ -164,7 +164,7 @@ func (h *Handlers) renderError(w http.ResponseWriter, title, message string) {
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #667eea 0%%, #764ba2 100%%);
         }
         .container {
             background: white;
@@ -178,7 +178,7 @@ func (h *Handlers) renderError(w http.ResponseWriter, title, message string) {
             width: 80px;
             height: 80px;
             margin: 0 auto 1rem;
-            border-radius: 50%;
+            border-radius: 50%%;
             background: #f44336;
             display: flex;
             align-items: center;
