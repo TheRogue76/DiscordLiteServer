@@ -46,10 +46,42 @@ run:
 	@echo "Starting server..."
 	go run cmd/server/main.go
 
-# Run tests
+# Test targets
+.PHONY: test test-unit test-integration test-coverage test-coverage-html clean-test
+
+# Run all tests
 test:
-	@echo "Running tests..."
-	go test -v ./...
+	@echo "Running all tests..."
+	go test -v -race -timeout=5m ./...
+
+# Run only unit tests (no TestContainers)
+test-unit:
+	@echo "Running unit tests..."
+	go test -v -short -race ./...
+
+# Run only integration tests (with TestContainers)
+test-integration:
+	@echo "Running integration tests..."
+	go test -v -run Integration -timeout=10m ./...
+
+# Generate coverage report
+test-coverage:
+	@echo "Generating coverage report..."
+	go test -coverprofile=coverage.out -covermode=atomic ./...
+	go tool cover -func=coverage.out
+	@echo "Total coverage:"
+	@go tool cover -func=coverage.out | grep total | awk '{print $$3}'
+
+# Generate HTML coverage report
+test-coverage-html: test-coverage
+	@echo "Generating HTML coverage report..."
+	go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: coverage.html"
+
+# Clean test artifacts
+clean-test:
+	@echo "Cleaning test artifacts..."
+	rm -f coverage.out coverage.html
 
 # Clean build artifacts
 clean:

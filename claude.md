@@ -421,7 +421,95 @@ github.com/joho/godotenv v1.5.1         // .env loading
 github.com/google/uuid v1.6.0           // UUID generation
 go.uber.org/zap v1.27.1                 // Structured logging
 golang.org/x/crypto                     // AES encryption
+
+// Testing
+github.com/stretchr/testify v1.9.0                          // Testing assertions
+github.com/testcontainers/testcontainers-go v0.27.0         // Integration testing
 ```
+
+## Testing Requirements
+
+### Mandatory Testing Policy
+
+**ALL new features and bug fixes MUST include tests before being considered complete.**
+
+#### Requirements:
+1. **Minimum Coverage:** 80% for new code
+2. **Test Types Required:**
+   - Unit tests for all new functions
+   - Integration tests for database operations
+   - End-to-end tests for new gRPC/HTTP endpoints
+
+#### Test File Conventions:
+- Test files named `*_test.go` alongside source files
+- Use `testify/assert` for assertions
+- Use `testify/require` for setup failures
+- Use TestContainers for database integration tests
+
+#### Running Tests:
+```bash
+# All tests
+make test
+
+# Unit tests only (fast)
+make test-unit
+
+# Integration tests only
+make test-integration
+
+# Coverage report
+make test-coverage
+make test-coverage-html  # Open coverage.html in browser
+```
+
+#### Test Structure:
+```go
+func TestFeatureName(t *testing.T) {
+    // Arrange: Setup test data
+    // Act: Execute the code under test
+    // Assert: Verify results
+}
+```
+
+#### Table-Driven Tests:
+Use table-driven tests for multiple scenarios:
+```go
+func TestValidation(t *testing.T) {
+    tests := []struct {
+        name    string
+        input   string
+        want    bool
+        wantErr error
+    }{
+        // test cases...
+    }
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            // test logic...
+        })
+    }
+}
+```
+
+#### Integration Test Guidelines:
+- Use `testutil.SetupTestDB()` for database tests
+- Always call cleanup function via `defer cleanup()`
+- Truncate tables between tests or use transactions
+- Mock external APIs (Discord) with `testutil.MockDiscordServer()`
+
+#### Pre-Commit Checklist:
+- [ ] Tests written for all new/modified functions
+- [ ] All tests pass: `make test`
+- [ ] Coverage ≥ 80%: `make test-coverage`
+- [ ] No race conditions: Tests run with `-race` flag
+- [ ] Integration tests use TestContainers, not local DB
+
+#### Exemptions:
+- Generated code (`*.pb.go`)
+- `main.go` (test via integration tests)
+- Simple getters/setters (if truly trivial)
+
+**Failure to include tests will result in PR rejection.**
 
 ## Environment Variables Reference
 
