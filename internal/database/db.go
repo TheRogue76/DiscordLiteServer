@@ -1,3 +1,4 @@
+// Package database provides PostgreSQL database connection and migration management.
 package database
 
 import (
@@ -9,8 +10,8 @@ import (
 
 	"github.com/golang-migrate/migrate/v4"
 	"github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
-	_ "github.com/lib/pq" // PostgreSQL driver
+	_ "github.com/golang-migrate/migrate/v4/source/file" // File source driver for migrations
+	_ "github.com/lib/pq"                                // PostgreSQL driver
 	"go.uber.org/zap"
 
 	"github.com/parsascontentcorner/discordliteserver/internal/config"

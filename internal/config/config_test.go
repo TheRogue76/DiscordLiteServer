@@ -19,9 +19,15 @@ func setupTestEnv(t *testing.T, envVars map[string]string) func() {
 	// Set test values
 	for key, value := range envVars {
 		if value == "" {
-			os.Unsetenv(key)
+			err := os.Unsetenv(key)
+			if err != nil {
+				t.Error(err)
+			}
 		} else {
-			os.Setenv(key, value)
+			err := os.Setenv(key, value)
+			if err != nil {
+				t.Error(err)
+			}
 		}
 	}
 
@@ -29,9 +35,15 @@ func setupTestEnv(t *testing.T, envVars map[string]string) func() {
 	return func() {
 		for key, value := range original {
 			if value == "" {
-				os.Unsetenv(key)
+				err := os.Unsetenv(key)
+				if err != nil {
+					t.Error(err)
+				}
 			} else {
-				os.Setenv(key, value)
+				err := os.Setenv(key, value)
+				if err != nil {
+					t.Error(err)
+				}
 			}
 		}
 	}

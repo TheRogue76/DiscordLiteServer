@@ -66,7 +66,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		switch code {
 		case "valid_code":
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordTokenResponse{
+			_ = json.NewEncoder(w).Encode(DiscordTokenResponse{
 				AccessToken:  "mock_access_token_123",
 				TokenType:    "Bearer",
 				ExpiresIn:    604800, // 7 days
@@ -77,7 +77,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		case "invalid_token_code":
 			// Returns valid token response but with a token that will fail at GetUserInfo
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordTokenResponse{
+			_ = json.NewEncoder(w).Encode(DiscordTokenResponse{
 				AccessToken:  "invalid_token",
 				TokenType:    "Bearer",
 				ExpiresIn:    604800,
@@ -88,19 +88,19 @@ func NewMockDiscordServer() *MockDiscordServer {
 		case "error_code":
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "invalid_grant",
 				ErrorDescription: "Invalid authorization code",
 			})
 
 		case "server_error":
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Internal Server Error"))
+			_, _ = w.Write([]byte("Internal Server Error"))
 
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "invalid_request",
 				ErrorDescription: "Unknown code",
 			})
@@ -120,7 +120,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		if !strings.HasPrefix(authHeader, "Bearer ") {
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "unauthorized",
 				ErrorDescription: "Missing or invalid authorization header",
 			})
@@ -134,7 +134,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		case "mock_access_token_123":
 			w.Header().Set("Content-Type", "application/json")
 			w.WriteHeader(http.StatusOK)
-			json.NewEncoder(w).Encode(DiscordUserResponse{
+			_ = json.NewEncoder(w).Encode(DiscordUserResponse{
 				ID:            "123456789012345678",
 				Username:      "TestUser",
 				Discriminator: "1234",
@@ -145,7 +145,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		case "invalid_token":
 			w.WriteHeader(http.StatusUnauthorized)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "unauthorized",
 				ErrorDescription: "Invalid token",
 			})
@@ -153,19 +153,19 @@ func NewMockDiscordServer() *MockDiscordServer {
 		case "not_found":
 			w.WriteHeader(http.StatusNotFound)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "not_found",
 				ErrorDescription: "User not found",
 			})
 
 		case "server_error":
 			w.WriteHeader(http.StatusInternalServerError)
-			w.Write([]byte("Internal Server Error"))
+			_, _ = w.Write([]byte("Internal Server Error"))
 
 		default:
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(DiscordErrorResponse{
+			_ = json.NewEncoder(w).Encode(DiscordErrorResponse{
 				Error:            "invalid_request",
 				ErrorDescription: "Unknown token",
 			})

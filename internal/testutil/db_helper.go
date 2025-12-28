@@ -89,9 +89,8 @@ func SetupTestDB(ctx context.Context) (*database.DB, func(), error) {
 		if err := db.RunMigrations(path); err == nil {
 			migrated = true
 			break
-		} else {
-			migrationErr = err
 		}
+		migrationErr = err
 	}
 
 	if !migrated {
@@ -101,7 +100,10 @@ func SetupTestDB(ctx context.Context) (*database.DB, func(), error) {
 	// Cleanup function
 	cleanup := func() {
 		if db != nil {
-			db.Close()
+			err := db.Close()
+			if err != nil {
+				logger.Error("failed to close db", zap.Error(err))
+			}
 		}
 		if pgContainer != nil {
 			if err := pgContainer.Terminate(ctx); err != nil {

@@ -1,3 +1,5 @@
+// Package auth provides Discord OAuth2 authentication functionality including
+// token exchange, user information retrieval, and token encryption/decryption.
 package auth
 
 import (
@@ -20,7 +22,7 @@ import (
 const (
 	discordAPIEndpoint = "https://discord.com/api/v10"
 	discordAuthURL     = "https://discord.com/oauth2/authorize"
-	discordTokenURL    = "https://discord.com/api/oauth2/token"
+	discordTokenURL    = "https://discord.com/api/oauth2/token" //nolint:gosec // Not a hardcoded credential, just an API endpoint URL
 )
 
 // DiscordUser represents a Discord user from the API
@@ -95,7 +97,11 @@ func (dc *DiscordClient) GetUserInfo(ctx context.Context, accessToken string) (*
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch user info: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil {
+			dc.logger.Warn("failed to close response body", zap.Error(err))
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

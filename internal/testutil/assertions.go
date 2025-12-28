@@ -1,3 +1,4 @@
+// Package testutil provides testing utilities including database helpers and mock servers.
 package testutil
 
 import (

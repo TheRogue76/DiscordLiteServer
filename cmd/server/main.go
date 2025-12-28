@@ -1,3 +1,5 @@
+// Package main is the entry point for the Discord Lite Server application.
+// It initializes and starts both gRPC and HTTP servers for Discord OAuth authentication.
 package main
 
 import (
@@ -14,7 +16,7 @@ import (
 	"github.com/parsascontentcorner/discordliteserver/internal/config"
 	"github.com/parsascontentcorner/discordliteserver/internal/database"
 	grpcserver "github.com/parsascontentcorner/discordliteserver/internal/grpc"
-	httpserver "github.com/parsascontentcorner/discordliteserver/internal/http"
+	httpserver "github.com/parsascontentcorner/discordliteserver/internal/oauth"
 	"github.com/parsascontentcorner/discordliteserver/pkg/logger"
 )
 
@@ -30,7 +32,11 @@ func main() {
 	if err != nil {
 		panic("Failed to initialize logger: " + err.Error())
 	}
-	defer log.Sync()
+	defer func() {
+		// Sync errors on stdout/stderr are expected and can be safely ignored
+		// for non-syncable file descriptors (pipes, terminals, etc.)
+		_ = log.Sync()
+	}()
 
 	log.Info("starting Discord Lite Server",
 		zap.String("environment", cfg.Server.Env),
@@ -43,7 +49,11 @@ func main() {
 	if err != nil {
 		log.Fatal("failed to connect to database", zap.Error(err))
 	}
-	defer db.Close()
+	defer func() {
+		if err := db.Close(); err != nil {
+			log.Error("failed to close database connection", zap.Error(err))
+		}
+	}()
 
 	// Run database migrations
 	if err := runMigrations(db, log); err != nil {

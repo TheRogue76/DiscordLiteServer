@@ -1,4 +1,5 @@
-package http
+// Package oauth provides HTTP server handlers for OAuth callbacks and health checks.
+package oauth
 
 import (
 	"fmt"
@@ -24,9 +25,11 @@ func NewHandlers(oauthHandler *auth.OAuthHandler, logger *zap.Logger) *Handlers 
 }
 
 // HealthHandler handles health check requests
-func (h *Handlers) HealthHandler(w http.ResponseWriter, r *http.Request) {
+func (h *Handlers) HealthHandler(w http.ResponseWriter, _ *http.Request) {
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
+	if _, err := w.Write([]byte("OK")); err != nil {
+		h.logger.Error("failed to write health check response", zap.Error(err))
+	}
 }
 
 // CallbackHandler handles the OAuth callback from Discord
@@ -141,7 +144,9 @@ func (h *Handlers) renderSuccess(w http.ResponseWriter) {
 </body>
 </html>
 `
-	w.Write([]byte(html))
+	if _, err := w.Write([]byte(html)); err != nil {
+		h.logger.Error("failed to write success response", zap.Error(err))
+	}
 }
 
 // renderError renders an error HTML page
@@ -217,5 +222,7 @@ func (h *Handlers) renderError(w http.ResponseWriter, title, message string) {
 </html>
 `, title, title, message)
 
-	w.Write([]byte(html))
+	if _, err := w.Write([]byte(html)); err != nil {
+		h.logger.Error("failed to write error response", zap.Error(err))
+	}
 }

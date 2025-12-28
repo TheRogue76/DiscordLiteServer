@@ -22,8 +22,8 @@ type Server struct {
 
 // NewServer creates a new gRPC server
 func NewServer(authService *AuthServer, port string, logger *zap.Logger) (*Server, error) {
-	// Create listener
-	lis, err := net.Listen("tcp", ":"+port)
+	// Create listener - net.Listen is standard for gRPC server setup
+	lis, err := net.Listen("tcp", ":"+port) //nolint:noctx // Server initialization doesn't require context
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen on port %s: %w", port, err)
 	}

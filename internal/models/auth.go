@@ -1,3 +1,4 @@
+// Package models defines data structures for authentication and user management.
 package models
 
 import (
