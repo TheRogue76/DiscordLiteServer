@@ -11,8 +11,8 @@ import (
 	"io"
 	"net/http"
 
-	"golang.org/x/oauth2"
 	"go.uber.org/zap"
+	"golang.org/x/oauth2"
 
 	"github.com/parsascontentcorner/discordliteserver/internal/config"
 )
@@ -37,6 +37,7 @@ type DiscordClient struct {
 	config        *oauth2.Config
 	encryptionKey []byte
 	logger        *zap.Logger
+	baseURL       string // Discord API base URL (configurable for testing)
 }
 
 // NewDiscordClient creates a new Discord OAuth client
@@ -56,6 +57,7 @@ func NewDiscordClient(cfg *config.Config, logger *zap.Logger) *DiscordClient {
 		config:        oauthConfig,
 		encryptionKey: cfg.Security.TokenEncryptionKey,
 		logger:        logger,
+		baseURL:       discordAPIEndpoint,
 	}
 }
 
@@ -81,7 +83,7 @@ func (dc *DiscordClient) ExchangeCode(ctx context.Context, code string) (*oauth2
 
 // GetUserInfo fetches user information from Discord API
 func (dc *DiscordClient) GetUserInfo(ctx context.Context, accessToken string) (*DiscordUser, error) {
-	req, err := http.NewRequestWithContext(ctx, "GET", discordAPIEndpoint+"/users/@me", nil)
+	req, err := http.NewRequestWithContext(ctx, "GET", dc.baseURL+"/users/@me", nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
 	}

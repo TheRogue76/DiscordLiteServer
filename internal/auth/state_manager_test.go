@@ -20,8 +20,8 @@ func TestGenerateState(t *testing.T) {
 	require.NoError(t, err)
 	assert.NotEmpty(t, state)
 
-	// State should be 32 bytes (64 hex chars)
-	assert.Equal(t, 64, len(state))
+	// State should be 32 bytes base64-encoded (44 chars)
+	assert.Equal(t, 44, len(state))
 }
 
 func TestGenerateState_Uniqueness(t *testing.T) {
@@ -48,11 +48,14 @@ func TestGenerateState_URLSafe(t *testing.T) {
 		state, err := manager.GenerateState()
 		require.NoError(t, err)
 
-		// State should be hex-encoded (only contains 0-9, a-f)
+		// State should be base64 URL-safe encoded (A-Z, a-z, 0-9, -, _)
 		for _, char := range state {
 			assert.True(t,
-				(char >= '0' && char <= '9') || (char >= 'a' && char <= 'f'),
-				"State should only contain hex characters: %s", state,
+				(char >= '0' && char <= '9') ||
+					(char >= 'A' && char <= 'Z') ||
+					(char >= 'a' && char <= 'z') ||
+					char == '-' || char == '_' || char == '=',
+				"State should only contain base64 URL-safe characters: %s", state,
 			)
 		}
 	}
@@ -144,7 +147,7 @@ func TestValidateState_InvalidState(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Empty(t, sessionID)
-	assert.Contains(t, err.Error(), "invalid or expired state")
+	assert.Contains(t, err.Error(), "state validation failed")
 }
 
 func TestValidateState_ExpiredState(t *testing.T) {
@@ -171,7 +174,7 @@ func TestValidateState_ExpiredState(t *testing.T) {
 
 	assert.Error(t, err)
 	assert.Empty(t, retrievedSessionID)
-	assert.Contains(t, err.Error(), "invalid or expired state")
+	assert.Contains(t, err.Error(), "state validation failed")
 }
 
 func TestValidateState_SingleUseEnforcement(t *testing.T) {
@@ -198,7 +201,7 @@ func TestValidateState_SingleUseEnforcement(t *testing.T) {
 	retrievedSessionID2, err2 := manager.ValidateState(ctx, state)
 	assert.Error(t, err2)
 	assert.Empty(t, retrievedSessionID2)
-	assert.Contains(t, err2.Error(), "invalid or expired state")
+	assert.Contains(t, err2.Error(), "state validation failed")
 }
 
 func TestValidateState_ConcurrentValidation(t *testing.T) {

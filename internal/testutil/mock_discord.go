@@ -10,8 +10,8 @@ import (
 
 // MockDiscordServer represents a mock Discord API server for testing.
 type MockDiscordServer struct {
-	Server       *httptest.Server
-	TokenCalls   int
+	Server        *httptest.Server
+	TokenCalls    int
 	UserInfoCalls int
 }
 
@@ -74,6 +74,17 @@ func NewMockDiscordServer() *MockDiscordServer {
 				Scope:        "identify email guilds",
 			})
 
+		case "invalid_token_code":
+			// Returns valid token response but with a token that will fail at GetUserInfo
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(DiscordTokenResponse{
+				AccessToken:  "invalid_token",
+				TokenType:    "Bearer",
+				ExpiresIn:    604800,
+				RefreshToken: "mock_refresh_token_789",
+				Scope:        "identify email guilds",
+			})
+
 		case "error_code":
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
@@ -122,6 +133,7 @@ func NewMockDiscordServer() *MockDiscordServer {
 		switch token {
 		case "mock_access_token_123":
 			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
 			json.NewEncoder(w).Encode(DiscordUserResponse{
 				ID:            "123456789012345678",
 				Username:      "TestUser",

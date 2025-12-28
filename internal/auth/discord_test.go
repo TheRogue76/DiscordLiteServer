@@ -2,7 +2,7 @@ package auth
 
 import (
 	"context"
-	"encoding/hex"
+	"encoding/base64"
 	"strings"
 	"testing"
 
@@ -126,6 +126,9 @@ func TestGetUserInfo_Success(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewDiscordClient(cfg, logger)
 
+	// Override base URL to use mock server
+	client.baseURL = mockServer.Server.URL + "/api/v10"
+
 	ctx := context.Background()
 	user, err := client.GetUserInfo(ctx, "mock_access_token_123")
 
@@ -147,6 +150,9 @@ func TestGetUserInfo_Unauthorized(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewDiscordClient(cfg, logger)
 
+	// Override base URL to use mock server
+	client.baseURL = mockServer.Server.URL + "/api/v10"
+
 	ctx := context.Background()
 	user, err := client.GetUserInfo(ctx, "invalid_token")
 
@@ -163,6 +169,9 @@ func TestGetUserInfo_NotFound(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewDiscordClient(cfg, logger)
 
+	// Override base URL to use mock server
+	client.baseURL = mockServer.Server.URL + "/api/v10"
+
 	ctx := context.Background()
 	user, err := client.GetUserInfo(ctx, "not_found")
 
@@ -178,6 +187,9 @@ func TestGetUserInfo_ServerError(t *testing.T) {
 	cfg := testutil.GenerateTestConfig()
 	logger, _ := zap.NewDevelopment()
 	client := NewDiscordClient(cfg, logger)
+
+	// Override base URL to use mock server
+	client.baseURL = mockServer.Server.URL + "/api/v10"
 
 	ctx := context.Background()
 	user, err := client.GetUserInfo(ctx, "server_error")
@@ -199,9 +211,10 @@ func TestEncryptToken(t *testing.T) {
 	assert.NotEmpty(t, encrypted)
 	assert.NotEqual(t, plaintext, encrypted)
 
-	// Verify it's base64 encoded
-	_, err = hex.DecodeString(encrypted)
-	assert.NoError(t, err)
+	// Verify it can be decrypted back to the original
+	decrypted, err := client.DecryptToken(encrypted)
+	require.NoError(t, err)
+	assert.Equal(t, plaintext, decrypted)
 }
 
 func TestDecryptToken_Success(t *testing.T) {
@@ -238,12 +251,12 @@ func TestDecryptToken_InvalidBase64(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewDiscordClient(cfg, logger)
 
-	invalidBase64 := "not-valid-hex!!!"
+	invalidBase64 := "not-valid-base64!!!"
 	decrypted, err := client.DecryptToken(invalidBase64)
 
 	assert.Error(t, err)
 	assert.Empty(t, decrypted)
-	assert.Contains(t, err.Error(), "hex")
+	assert.Contains(t, err.Error(), "base64")
 }
 
 func TestDecryptToken_WrongKey(t *testing.T) {
@@ -279,9 +292,9 @@ func TestDecryptToken_TruncatedCiphertext(t *testing.T) {
 	require.NoError(t, err)
 
 	// Truncate the ciphertext (remove last few characters)
-	decoded, _ := hex.DecodeString(encrypted)
+	decoded, _ := base64.URLEncoding.DecodeString(encrypted)
 	if len(decoded) > 10 {
-		truncated := hex.EncodeToString(decoded[:10])
+		truncated := base64.URLEncoding.EncodeToString(decoded[:10])
 
 		decrypted, err := client.DecryptToken(truncated)
 		assert.Error(t, err)
