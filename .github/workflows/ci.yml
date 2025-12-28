@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+
+jobs:
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.1'
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run tests
+      run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+      timeout-minutes: 15
+
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.out
+        flags: unittests
+        fail_ci_if_error: false
+      continue-on-error: true
+
+    - name: Display coverage summary
+      run: |
+        go tool cover -func=coverage.out | grep total | awk '{print "Total coverage: " $3}'
+
+  format:
+    name: Check Formatting
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.1'
+        cache: true
+
+    - name: Check code formatting
+      run: |
+        # Check if any files need formatting
+        unformatted=$(gofmt -l .)
+        if [ -n "$unformatted" ]; then
+          echo "The following files are not formatted:"
+          echo "$unformatted"
+          echo ""
+          echo "Please run 'go fmt ./...' or 'make fmt' to format your code."
+          exit 1
+        fi
+        echo "All files are properly formatted!"
+
+  lint:
+    name: Run Linter
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Go
+      uses: actions/setup-go@v5
+      with:
+        go-version: '1.23.1'
+        cache: true
+
+    - name: Install dependencies
+      run: go mod download
+
+    - name: Run golangci-lint
+      uses: golangci/golangci-lint-action@v4
+      with:
+        version: v1.55
+        args: --timeout=5m --config=.golangci.yml
+        skip-cache: false
+        skip-pkg-cache: false
+        skip-build-cache: false
