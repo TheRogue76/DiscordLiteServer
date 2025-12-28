@@ -325,7 +325,7 @@ func (db *DB) ValidateAndDeleteOAuthState(ctx context.Context, state string) (*m
 		// Rollback is safe to call even if the transaction has been committed
 		err := tx.Rollback()
 		if err != nil {
-			db.logger.Error("Failed to roll back transaction", zap.Error(err))
+			db.logger.Error("failed to roll back transaction", zap.Error(err))
 		}
 	}()
 
