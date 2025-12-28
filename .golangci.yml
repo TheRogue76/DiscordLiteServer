@@ -61,7 +61,6 @@ issues:
       linters:
         - gosec
         - errcheck
-        - dupl
 
     # Exclude specific lint messages
     - linters:
