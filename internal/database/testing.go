@@ -77,7 +77,7 @@ func setupTestDB(ctx context.Context) (*DB, func(), error) {
 		if db != nil {
 			err := db.Close()
 			if err != nil {
-				logger.Error("Failed to close db", zap.Error(err))
+				logger.Error("failed to close db", zap.Error(err))
 			}
 		}
 		if pgContainer != nil {
