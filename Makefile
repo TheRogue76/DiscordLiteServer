@@ -136,7 +136,7 @@ fmt-check:
 # Run linter
 lint:
 	@echo "Running linter..."
-	golangci-lint run
+	golangci-lint run --timeout=5m --config=.golangci.yml
 
 # Run all CI checks locally
 ci: fmt-check lint test
