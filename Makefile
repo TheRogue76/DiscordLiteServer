@@ -58,11 +58,6 @@ clean:
 	rm -f $(PROTO_DIR)/*.pb.go
 	@echo "Clean complete"
 
-# Run database migrations
-migrate:
-	@echo "Running database migrations..."
-	./scripts/migrate.sh
-
 # Docker commands
 docker-build:
 	@echo "Building Docker image..."

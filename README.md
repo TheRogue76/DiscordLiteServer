@@ -160,14 +160,15 @@ cp .env.example .env
 # Edit with your credentials
 ```
 
-6. Run migrations:
+6. Run the server (migrations run automatically):
 ```bash
-./scripts/migrate.sh
+# Migrations will run automatically on server startup
+go run cmd/server/main.go
 ```
 
-7. Run the server:
+Alternatively, using Make:
 ```bash
-go run cmd/server/main.go
+make run
 ```
 
 ## Configuration

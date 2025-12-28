@@ -123,12 +123,3 @@ func (db *DB) RunMigrations(migrationsPath string) error {
 
 	return nil
 }
-
-// readMigrationFile reads a migration file
-// This is a simple implementation; in production, consider using a migration library
-func readMigrationFile(path string) (string, error) {
-	// This is a placeholder - in the actual implementation,
-	// we'll read from the file system or use embedded files
-	// For now, this will be called from main.go after reading the file
-	return "", fmt.Errorf("not implemented: use migration script")
-}

@@ -130,7 +130,6 @@
 - [x] `.dockerignore` - Optimized builds
 
 #### Phase 9: Documentation & Tools
-- [x] `scripts/migrate.sh` - Database migration script
 - [x] `README.md` - Comprehensive documentation
   - Discord app setup guide
   - Installation instructions (Docker + Local)
@@ -217,7 +216,7 @@
 
 3. **Database Setup**
    - PostgreSQL must be running (Docker or local)
-   - Run migrations: `./scripts/migrate.sh`
+   - Migrations run automatically when server starts (using golang-migrate)
    - Verify tables created: `psql -U discordlite -d discordlite_db -c '\dt'`
 
 #### Potential Issues to Watch
@@ -387,8 +386,6 @@ DiscordLiteServer/
 ├── pkg/
 │   └── logger/
 │       └── logger.go                 # Logging (51 lines)
-├── scripts/
-│   └── migrate.sh                    # Migration script (executable)
 ├── bin/
 │   └── server                        # Compiled binary (17MB)
 ├── docker-compose.yml                # Docker orchestration
@@ -563,8 +560,9 @@ docker-compose logs -f app
 
 ### Database
 ```bash
-# Run migrations
-./scripts/migrate.sh
+# Migrations run automatically on server startup
+# To check migration status:
+docker exec discordlite_postgres psql -U discordlite -d discordlite_db -c "SELECT * FROM schema_migrations;"
 
 # Connect to database
 docker exec -it discordlite_postgres psql -U discordlite -d discordlite_db
