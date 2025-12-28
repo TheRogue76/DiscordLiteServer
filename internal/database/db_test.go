@@ -74,7 +74,12 @@ func TestNewDB_Success(t *testing.T) {
 
 	require.NoError(t, err)
 	require.NotNil(t, db)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Verify connection is active
 	err = db.PingContext(ctx)
@@ -147,7 +152,12 @@ func TestDBHealth_Healthy(t *testing.T) {
 
 	db, err := NewDB(cfg, logger)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Health check should pass
 	err = db.Health(ctx)
@@ -227,7 +237,12 @@ func TestRunMigrations_Success(t *testing.T) {
 
 	db, err := NewDB(cfg, logger)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Run migrations - try multiple paths
 	migrationPaths := []string{
@@ -242,9 +257,8 @@ func TestRunMigrations_Success(t *testing.T) {
 		if err := db.RunMigrations(path); err == nil {
 			migrated = true
 			break
-		} else {
-			migrationErr = err
 		}
+		migrationErr = err
 	}
 
 	require.True(t, migrated, "Failed to run migrations from any path: %v", migrationErr)
@@ -291,7 +305,12 @@ func TestRunMigrations_Idempotent(t *testing.T) {
 
 	db, err := NewDB(cfg, logger)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Run migrations first time - try multiple paths
 	migrationPaths := []string{
@@ -342,7 +361,12 @@ func TestRunMigrations_InvalidPath(t *testing.T) {
 
 	db, err := NewDB(cfg, logger)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Try to run migrations with invalid path
 	err = db.RunMigrations("/nonexistent/path/to/migrations")
@@ -371,7 +395,12 @@ func TestDatabaseConnectionPool(t *testing.T) {
 
 	db, err := NewDB(cfg, logger)
 	require.NoError(t, err)
-	defer db.Close()
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			logger.Error("failed to close db", zap.Error(err))
+		}
+	}()
 
 	// Verify connection pool settings
 	stats := db.Stats()

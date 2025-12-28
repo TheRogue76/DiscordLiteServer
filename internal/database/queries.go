@@ -3,6 +3,7 @@ package database
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"time"
 
@@ -61,7 +62,7 @@ func (db *DB) GetUserByDiscordID(ctx context.Context, discordID string) (*models
 		&user.UpdatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("user not found")
 	}
 	if err != nil {
@@ -91,7 +92,7 @@ func (db *DB) GetUserByID(ctx context.Context, userID int64) (*models.User, erro
 		&user.UpdatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("user not found")
 	}
 	if err != nil {
@@ -154,7 +155,7 @@ func (db *DB) GetOAuthToken(ctx context.Context, userID int64) (*models.OAuthTok
 		&token.UpdatedAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("oauth token not found")
 	}
 	if err != nil {
@@ -227,7 +228,7 @@ func (db *DB) GetAuthSession(ctx context.Context, sessionID string) (*models.Aut
 		&session.ExpiresAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("auth session not found")
 	}
 	if err != nil {
@@ -321,7 +322,13 @@ func (db *DB) ValidateAndDeleteOAuthState(ctx context.Context, state string) (*m
 	if err != nil {
 		return nil, fmt.Errorf("failed to begin transaction: %w", err)
 	}
-	defer tx.Rollback()
+	defer func() {
+		// Rollback is safe to call even if the transaction has been committed
+		// Ignore sql.ErrTxDone, which indicates the transaction is already finished.
+		if err := tx.Rollback(); err != nil && !errors.Is(err, sql.ErrTxDone) {
+			db.logger.Error("failed to roll back transaction", zap.Error(err))
+		}
+	}()
 
 	// Get the state
 	query := `
@@ -338,7 +345,7 @@ func (db *DB) ValidateAndDeleteOAuthState(ctx context.Context, state string) (*m
 		&oauthState.ExpiresAt,
 	)
 
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return nil, fmt.Errorf("invalid state: not found")
 	}
 	if err != nil {

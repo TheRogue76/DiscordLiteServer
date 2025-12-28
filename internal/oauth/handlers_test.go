@@ -1,4 +1,4 @@
-package http
+package oauth
 
 import (
 	"context"
@@ -18,7 +18,7 @@ func TestHealthHandler(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	handlers := NewHandlers(nil, logger) // No OAuth handler needed for health check
 
-	req, err := http.NewRequest("GET", "/health", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/health", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -57,7 +57,7 @@ func TestCallbackHandler_Success(t *testing.T) {
 
 	// Note: This test will fail when trying to exchange code with Discord
 	// since we're using a test code, but we're testing the handler logic
-	req, err := http.NewRequest("GET", "/auth/callback?code=test_code_123&state="+state, nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback?code=test_code_123&state="+state, nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -73,7 +73,7 @@ func TestCallbackHandler_MissingCode(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	handlers := NewHandlers(nil, logger) // OAuth handler not needed for this test
 
-	req, err := http.NewRequest("GET", "/auth/callback?state=valid_state", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback?state=valid_state", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -90,7 +90,7 @@ func TestCallbackHandler_MissingState(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	handlers := NewHandlers(nil, logger)
 
-	req, err := http.NewRequest("GET", "/auth/callback?code=test_code", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback?code=test_code", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -107,7 +107,7 @@ func TestCallbackHandler_MissingBothParameters(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	handlers := NewHandlers(nil, logger)
 
-	req, err := http.NewRequest("GET", "/auth/callback", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -123,7 +123,7 @@ func TestCallbackHandler_DiscordError(t *testing.T) {
 	handlers := NewHandlers(nil, logger)
 
 	// Simulate Discord returning an error
-	req, err := http.NewRequest("GET", "/auth/callback?error=access_denied&error_description=User+denied+authorization", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback?error=access_denied&error_description=User+denied+authorization", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -151,7 +151,7 @@ func TestCallbackHandler_InvalidState(t *testing.T) {
 	handlers := NewHandlers(oauthHandler, logger)
 
 	// Use an invalid state (not stored in database)
-	req, err := http.NewRequest("GET", "/auth/callback?code=test_code_123&state=invalid_state_xyz", nil)
+	req, err := http.NewRequestWithContext(context.Background(), "GET", "/auth/callback?code=test_code_123&state=invalid_state_xyz", nil)
 	require.NoError(t, err)
 
 	rr := httptest.NewRecorder()
@@ -233,7 +233,7 @@ func TestCallbackHandler_HTTPMethods(t *testing.T) {
 			handlers := NewHandlers(nil, logger)
 
 			// Missing parameters to trigger validation error
-			req, err := http.NewRequest(tt.method, "/auth/callback", nil)
+			req, err := http.NewRequestWithContext(context.Background(), tt.method, "/auth/callback", nil)
 			require.NoError(t, err)
 
 			rr := httptest.NewRecorder()

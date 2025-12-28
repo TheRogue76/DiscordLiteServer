@@ -1,3 +1,4 @@
+// Package logger provides structured logging functionality using zap.
 package logger
 
 import (
