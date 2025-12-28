@@ -1,23 +1,14 @@
 run:
   timeout: 5m
   tests: true
-  skip-dirs:
-    - bin
-    - vendor
-  skip-files:
-    - ".*\\.pb\\.go$"  # Skip generated protobuf files
 
 linters:
   enable:
     - errcheck      # Check for unchecked errors
-    - gosimple      # Simplify code
     - govet         # Vet examines Go source code
     - ineffassign   # Detect ineffectual assignments
     - staticcheck   # Advanced static analysis
-    - typecheck     # Type-check Go code
     - unused        # Check for unused code
-    - gofmt         # Check code formatting
-    - goimports     # Check import formatting
     - misspell      # Check for misspelled words
     - revive        # Fast, configurable linter
     - gosec         # Security-focused linter
@@ -25,53 +16,7 @@ linters:
     - noctx         # Detect HTTP requests without context
     - sqlclosecheck # Check SQL rows/statements are closed
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: false
-    exclude-functions:
-      - (io.Closer).Close
-      - (*database/sql.Rows).Close
-
-  govet:
-    enable-all: true
-    disable:
-      - shadow  # Too many false positives
-
-  revive:
-    confidence: 0.8
-    rules:
-      - name: exported
-        disabled: true  # Disable "exported should have comment" for now
-
-  gosec:
-    severity: medium
-    confidence: medium
-    excludes:
-      - G104  # Audit errors not checked (covered by errcheck)
-      - G404  # Use of weak random (crypto/rand is used where needed)
-
-  staticcheck:
-    checks: ["all"]
-
 issues:
-  exclude-rules:
-    # Exclude some linters from running on test files
-    - path: _test\.go
-      linters:
-        - gosec
-        - errcheck
-
-    # Exclude specific lint messages
-    - linters:
-        - revive
-      text: "should have a package comment"
-
-    # Exclude linters for testutil mock files
-    - path: internal/testutil/
-      linters:
-        - errcheck
-        - gosec
 
   max-issues-per-linter: 0
   max-same-issues: 0
@@ -82,3 +27,5 @@ output:
   print-issued-lines: true
   print-linter-name: true
   sort-results: true
+
+version: "2"
