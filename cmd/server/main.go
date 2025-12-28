@@ -129,7 +129,7 @@ func runMigrations(db *database.DB, log *zap.Logger) error {
 	migrationsPath := "internal/database/migrations"
 
 	// Run migrations using the migrate library
-	if err := db.RunMigrationsWithLibrary(migrationsPath); err != nil {
+	if err := db.RunMigrations(migrationsPath); err != nil {
 		return fmt.Errorf("migration failed: %w", err)
 	}
 

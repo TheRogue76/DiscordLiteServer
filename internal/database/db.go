@@ -76,8 +76,8 @@ func (db *DB) Health(ctx context.Context) error {
 	return nil
 }
 
-// RunMigrationsWithLibrary runs database migrations using golang-migrate library
-func (db *DB) RunMigrationsWithLibrary(migrationsPath string) error {
+// RunMigrations runs database migrations using golang-migrate library
+func (db *DB) RunMigrations(migrationsPath string) error {
 	db.logger.Info("running database migrations with golang-migrate", zap.String("path", migrationsPath))
 
 	// Create postgres driver instance from existing connection
