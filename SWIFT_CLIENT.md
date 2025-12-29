@@ -167,15 +167,15 @@ class DiscordAuthManager: ObservableObject {
                 let response = try await authService.getAuthStatus(request: request)
 
                 switch response.status {
-                case .authStatusPending:
+                case .pending:
                     try await Task.sleep(nanoseconds: 2_000_000_000)
 
-                case .authStatusAuthenticated:
+                case .authenticated:
                     user = response.user
                     authState = .authenticated
                     return
 
-                case .authStatusFailed:
+                case .failed:
                     authState = .failed(response.errorMessage ?? "Authentication failed")
                     return
 
