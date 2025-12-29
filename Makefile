@@ -65,13 +65,13 @@ proto: install-buf
 # Generate only Go code
 proto-go: install-buf
 	@echo "Generating Go protobuf code..."
-	cd $(PROTO_DIR) && buf generate --path discord/auth/v1
+	cd $(PROTO_DIR) && buf generate --template buf.gen.go.yaml --path discord/auth/v1
 	@echo "Go code generated in api/gen/go/"
 
 # Generate only Swift code
 proto-swift: install-buf
 	@echo "Generating Swift protobuf code..."
-	cd $(PROTO_DIR) && buf generate --path discord/auth/v1
+	cd $(PROTO_DIR) && buf generate --template buf.gen.swift.yaml --path discord/auth/v1
 	@echo "Swift code generated in api/gen/swift/"
 
 # Validate protobuf definitions
