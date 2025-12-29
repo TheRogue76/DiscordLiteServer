@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 
-	"github.com/parsascontentcorner/discordliteserver/api/proto"
+	authv1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1"
 )
 
 // Server wraps the gRPC server
@@ -34,7 +34,7 @@ func NewServer(authService *AuthServer, port string, logger *zap.Logger) (*Serve
 	)
 
 	// Register auth service
-	authpb.RegisterAuthServiceServer(grpcServer, authService)
+	authv1.RegisterAuthServiceServer(grpcServer, authService)
 
 	// Register reflection service for development (allows tools like grpcurl)
 	reflection.Register(grpcServer)
