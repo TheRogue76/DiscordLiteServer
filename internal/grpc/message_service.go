@@ -185,9 +185,17 @@ func (s *MessageServer) GetMessages(ctx context.Context, req *messagev1.GetMessa
 				URL:          att.URL,
 				ProxyURL:     sql.NullString{String: att.ProxyURL, Valid: att.ProxyURL != ""},
 				SizeBytes:    att.Size,
-				Width:        sql.NullInt64{Int64: int64(*att.Width), Valid: att.Width != nil},
-				Height:       sql.NullInt64{Int64: int64(*att.Height), Valid: att.Height != nil},
 				ContentType:  sql.NullString{String: att.ContentType, Valid: att.ContentType != ""},
+			}
+
+			// Set width if present
+			if att.Width != nil {
+				attachment.Width = sql.NullInt64{Int64: int64(*att.Width), Valid: true}
+			}
+
+			// Set height if present
+			if att.Height != nil {
+				attachment.Height = sql.NullInt64{Int64: int64(*att.Height), Valid: true}
 			}
 
 			if err := s.db.CreateMessageAttachment(ctx, attachment); err != nil {

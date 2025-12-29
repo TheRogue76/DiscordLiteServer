@@ -123,8 +123,8 @@ func TestWait_RateLimitExhausted(t *testing.T) {
 
 	endpoint := "/api/v10/test/ratelimit"
 
-	// Simulate exhausted rate limit
-	resetTime := time.Now().Add(500 * time.Millisecond)
+	// Simulate exhausted rate limit - use longer duration to account for test overhead
+	resetTime := time.Now().Add(1 * time.Second)
 	headers := http.Header{
 		"X-RateLimit-Limit":     []string{"5"},
 		"X-RateLimit-Remaining": []string{"0"},
@@ -142,12 +142,13 @@ func TestWait_RateLimitExhausted(t *testing.T) {
 		t.Fatalf("Wait() failed: %v", err)
 	}
 
-	// Should have waited approximately until reset time
-	if duration < 400*time.Millisecond {
+	// Should have waited approximately until reset time (allow for overhead)
+	// Account for RFC3339 second-level precision and processing time
+	if duration < 800*time.Millisecond {
 		t.Errorf("Wait() did not block long enough: %v", duration)
 	}
 
-	if duration > 700*time.Millisecond {
+	if duration > 1200*time.Millisecond {
 		t.Errorf("Wait() blocked too long: %v", duration)
 	}
 }
