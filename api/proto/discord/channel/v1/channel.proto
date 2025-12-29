@@ -1,0 +1,79 @@
+syntax = "proto3";
+
+package discord.channel.v1;
+
+option go_package = "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/channel/v1;channelv1";
+
+// ChannelService provides methods for fetching Discord guilds and channels
+service ChannelService {
+  // GetGuilds returns all guilds (servers) the authenticated user is a member of
+  rpc GetGuilds(GetGuildsRequest) returns (GetGuildsResponse);
+
+  // GetChannels returns all channels in a specific guild
+  rpc GetChannels(GetChannelsRequest) returns (GetChannelsResponse);
+}
+
+// GetGuildsRequest requests the list of guilds for the authenticated user
+message GetGuildsRequest {
+  string session_id = 1;      // Auth session ID from InitAuth
+  bool force_refresh = 2;     // If true, bypass cache and fetch from Discord API
+}
+
+// GetGuildsResponse contains the list of guilds
+message GetGuildsResponse {
+  repeated Guild guilds = 1;
+  bool from_cache = 2;        // True if data was served from cache
+}
+
+// GetChannelsRequest requests the list of channels for a guild
+message GetChannelsRequest {
+  string session_id = 1;      // Auth session ID
+  string guild_id = 2;        // Discord guild ID
+  bool force_refresh = 3;     // If true, bypass cache and fetch from Discord API
+}
+
+// GetChannelsResponse contains the list of channels
+message GetChannelsResponse {
+  repeated Channel channels = 1;
+  bool from_cache = 2;        // True if data was served from cache
+}
+
+// Guild represents a Discord guild (server)
+message Guild {
+  string discord_guild_id = 1;
+  string name = 2;
+  string icon = 3;
+  bool owner = 4;
+  int64 permissions = 5;
+  repeated string features = 6;
+}
+
+// Channel represents a Discord channel
+message Channel {
+  string discord_channel_id = 1;
+  string guild_id = 2;
+  string name = 3;
+  ChannelType type = 4;
+  int32 position = 5;
+  string parent_id = 6;
+  string topic = 7;
+  bool nsfw = 8;
+  string last_message_id = 9;
+}
+
+// ChannelType represents the type of Discord channel
+enum ChannelType {
+  CHANNEL_TYPE_UNSPECIFIED = 0;
+  CHANNEL_TYPE_GUILD_TEXT = 1;
+  CHANNEL_TYPE_DM = 2;
+  CHANNEL_TYPE_GUILD_VOICE = 3;
+  CHANNEL_TYPE_GROUP_DM = 4;
+  CHANNEL_TYPE_GUILD_CATEGORY = 5;
+  CHANNEL_TYPE_GUILD_NEWS = 6;
+  CHANNEL_TYPE_GUILD_STORE = 7;
+  CHANNEL_TYPE_GUILD_NEWS_THREAD = 10;
+  CHANNEL_TYPE_GUILD_PUBLIC_THREAD = 11;
+  CHANNEL_TYPE_GUILD_PRIVATE_THREAD = 12;
+  CHANNEL_TYPE_GUILD_STAGE_VOICE = 13;
+  CHANNEL_TYPE_GUILD_FORUM = 15;
+}

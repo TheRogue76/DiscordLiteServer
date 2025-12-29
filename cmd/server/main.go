@@ -17,6 +17,8 @@ import (
 	"github.com/parsascontentcorner/discordliteserver/internal/database"
 	grpcserver "github.com/parsascontentcorner/discordliteserver/internal/grpc"
 	httpserver "github.com/parsascontentcorner/discordliteserver/internal/oauth"
+	"github.com/parsascontentcorner/discordliteserver/internal/ratelimit"
+	"github.com/parsascontentcorner/discordliteserver/internal/websocket"
 	"github.com/parsascontentcorner/discordliteserver/pkg/logger"
 )
 
@@ -70,9 +72,31 @@ func main() {
 	stateManager := auth.NewStateManager(db, cfg.Security.StateExpiryMinutes)
 	oauthHandler := auth.NewOAuthHandler(db, discordClient, stateManager, log)
 
-	// Initialize gRPC server
+	// Initialize rate limiter
+	rateLimiter := ratelimit.NewRateLimiter(log)
+	discordClient.SetRateLimiter(rateLimiter)
+
+	// Initialize cache manager
+	cacheManager := grpcserver.NewCacheManager(db, log)
+
+	// Initialize WebSocket manager
+	wsManager := websocket.NewManager(db, discordClient, log, cfg.WebSocket.MaxConnectionsPerUser, cfg.WebSocket.Enabled)
+
+	// Start WebSocket cleanup job (runs every 30 minutes)
+	if cfg.WebSocket.Enabled {
+		go wsManager.StartCleanupJob(ctx, 30*time.Minute, 1*time.Hour)
+	}
+
+	// Start cache cleanup job (runs every 1 hour)
+	go db.StartCacheCleanupJob(ctx, 1*time.Hour)
+
+	// Initialize gRPC services
 	authService := grpcserver.NewAuthServer(db, discordClient, stateManager, log, cfg.Security.SessionExpiryHours)
-	grpcServer, err := grpcserver.NewServer(authService, cfg.Server.GRPCPort, log)
+	channelService := grpcserver.NewChannelServer(db, discordClient, log, cacheManager)
+	messageService := grpcserver.NewMessageServer(db, discordClient, log, cacheManager, wsManager)
+
+	// Initialize gRPC server with all services
+	grpcServer, err := grpcserver.NewServer(authService, channelService, messageService, cfg.Server.GRPCPort, log)
 	if err != nil {
 		log.Fatal("failed to create gRPC server", zap.Error(err))
 	}
@@ -127,6 +151,13 @@ func main() {
 
 	// Shutdown gRPC server
 	grpcServer.GracefulStop()
+
+	// Shutdown WebSocket manager
+	if cfg.WebSocket.Enabled {
+		if err := wsManager.Shutdown(shutdownCtx); err != nil {
+			log.Error("failed to shutdown WebSocket manager gracefully", zap.Error(err))
+		}
+	}
 
 	log.Info("servers shut down successfully")
 }

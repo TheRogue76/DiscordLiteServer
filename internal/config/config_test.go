@@ -540,3 +540,307 @@ func TestCustomScopes(t *testing.T) {
 
 	assert.Equal(t, []string{"identify", "guilds", "guilds.members.read"}, cfg.Discord.Scopes)
 }
+
+// Phase 2 Tests: Cache Configuration
+
+func TestCacheConfigDefaults(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	cleanup := setupTestEnv(t, map[string]string{
+		"DISCORD_CLIENT_ID":     "client_id",
+		"DISCORD_CLIENT_SECRET": "secret",
+		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DB_PASSWORD":           "password",
+		"TOKEN_ENCRYPTION_KEY":  validKey,
+	})
+	defer cleanup()
+
+	cfg, err := Load()
+	require.NoError(t, err)
+
+	// Verify Cache defaults
+	assert.Equal(t, 1, cfg.Cache.GuildTTLHours)
+	assert.Equal(t, 30, cfg.Cache.ChannelTTLMinutes)
+	assert.Equal(t, 5, cfg.Cache.MessageTTLMinutes)
+}
+
+func TestCacheConfigCustomValues(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	cleanup := setupTestEnv(t, map[string]string{
+		"DISCORD_CLIENT_ID":          "client_id",
+		"DISCORD_CLIENT_SECRET":      "secret",
+		"DISCORD_REDIRECT_URI":       "http://localhost:8080/callback",
+		"DB_PASSWORD":                "password",
+		"TOKEN_ENCRYPTION_KEY":       validKey,
+		"CACHE_GUILD_TTL_HOURS":      "2",
+		"CACHE_CHANNEL_TTL_MINUTES":  "60",
+		"CACHE_MESSAGE_TTL_MINUTES":  "10",
+	})
+	defer cleanup()
+
+	cfg, err := Load()
+	require.NoError(t, err)
+
+	assert.Equal(t, 2, cfg.Cache.GuildTTLHours)
+	assert.Equal(t, 60, cfg.Cache.ChannelTTLMinutes)
+	assert.Equal(t, 10, cfg.Cache.MessageTTLMinutes)
+}
+
+func TestValidateCacheTTL(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	tests := []struct {
+		name        string
+		guildTTL    string
+		channelTTL  string
+		messageTTL  string
+		shouldError bool
+		expectedErr string
+	}{
+		{
+			name:        "all positive values",
+			guildTTL:    "2",
+			channelTTL:  "45",
+			messageTTL:  "10",
+			shouldError: false,
+		},
+		{
+			name:        "zero guild TTL",
+			guildTTL:    "0",
+			channelTTL:  "30",
+			messageTTL:  "5",
+			shouldError: true,
+			expectedErr: "CACHE_GUILD_TTL_HOURS must be positive",
+		},
+		{
+			name:        "negative channel TTL",
+			guildTTL:    "1",
+			channelTTL:  "-1",
+			messageTTL:  "5",
+			shouldError: true,
+			expectedErr: "CACHE_CHANNEL_TTL_MINUTES must be positive",
+		},
+		{
+			name:        "zero message TTL",
+			guildTTL:    "1",
+			channelTTL:  "30",
+			messageTTL:  "0",
+			shouldError: true,
+			expectedErr: "CACHE_MESSAGE_TTL_MINUTES must be positive",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanup := setupTestEnv(t, map[string]string{
+				"DISCORD_CLIENT_ID":          "client_id",
+				"DISCORD_CLIENT_SECRET":      "secret",
+				"DISCORD_REDIRECT_URI":       "http://localhost:8080/callback",
+				"DB_PASSWORD":                "password",
+				"TOKEN_ENCRYPTION_KEY":       validKey,
+				"CACHE_GUILD_TTL_HOURS":      tt.guildTTL,
+				"CACHE_CHANNEL_TTL_MINUTES":  tt.channelTTL,
+				"CACHE_MESSAGE_TTL_MINUTES":  tt.messageTTL,
+			})
+			defer cleanup()
+
+			cfg, err := Load()
+
+			if tt.shouldError {
+				assert.Error(t, err)
+				assert.Nil(t, cfg)
+				assert.Contains(t, err.Error(), tt.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, cfg)
+			}
+		})
+	}
+}
+
+// Phase 2 Tests: WebSocket Configuration
+
+func TestWebSocketConfigDefaults(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	cleanup := setupTestEnv(t, map[string]string{
+		"DISCORD_CLIENT_ID":     "client_id",
+		"DISCORD_CLIENT_SECRET": "secret",
+		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DB_PASSWORD":           "password",
+		"TOKEN_ENCRYPTION_KEY":  validKey,
+	})
+	defer cleanup()
+
+	cfg, err := Load()
+	require.NoError(t, err)
+
+	// Verify WebSocket defaults
+	assert.Equal(t, true, cfg.WebSocket.Enabled)
+	assert.Equal(t, 5, cfg.WebSocket.MaxConnectionsPerUser)
+	assert.Equal(t, 30, cfg.WebSocket.HeartbeatInterval)
+	assert.Equal(t, 3, cfg.WebSocket.ReconnectAttempts)
+	assert.Equal(t, 5, cfg.WebSocket.ReconnectDelay)
+}
+
+func TestWebSocketConfigCustomValues(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	cleanup := setupTestEnv(t, map[string]string{
+		"DISCORD_CLIENT_ID":                    "client_id",
+		"DISCORD_CLIENT_SECRET":                "secret",
+		"DISCORD_REDIRECT_URI":                 "http://localhost:8080/callback",
+		"DB_PASSWORD":                          "password",
+		"TOKEN_ENCRYPTION_KEY":                 validKey,
+		"WEBSOCKET_ENABLED":                    "false",
+		"WEBSOCKET_MAX_CONNECTIONS_PER_USER":   "10",
+		"WEBSOCKET_HEARTBEAT_INTERVAL":         "60",
+		"WEBSOCKET_RECONNECT_ATTEMPTS":         "5",
+		"WEBSOCKET_RECONNECT_DELAY":            "10",
+	})
+	defer cleanup()
+
+	cfg, err := Load()
+	require.NoError(t, err)
+
+	assert.Equal(t, false, cfg.WebSocket.Enabled)
+	assert.Equal(t, 10, cfg.WebSocket.MaxConnectionsPerUser)
+	assert.Equal(t, 60, cfg.WebSocket.HeartbeatInterval)
+	assert.Equal(t, 5, cfg.WebSocket.ReconnectAttempts)
+	assert.Equal(t, 10, cfg.WebSocket.ReconnectDelay)
+}
+
+func TestValidateWebSocketConfig(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	tests := []struct {
+		name        string
+		maxConns    string
+		heartbeat   string
+		attempts    string
+		delay       string
+		shouldError bool
+		expectedErr string
+	}{
+		{
+			name:        "all valid values",
+			maxConns:    "10",
+			heartbeat:   "45",
+			attempts:    "5",
+			delay:       "10",
+			shouldError: false,
+		},
+		{
+			name:        "zero max connections",
+			maxConns:    "0",
+			heartbeat:   "30",
+			attempts:    "3",
+			delay:       "5",
+			shouldError: true,
+			expectedErr: "WEBSOCKET_MAX_CONNECTIONS_PER_USER must be positive",
+		},
+		{
+			name:        "negative heartbeat interval",
+			maxConns:    "5",
+			heartbeat:   "-1",
+			attempts:    "3",
+			delay:       "5",
+			shouldError: true,
+			expectedErr: "WEBSOCKET_HEARTBEAT_INTERVAL must be positive",
+		},
+		{
+			name:        "negative reconnect attempts (should allow)",
+			maxConns:    "5",
+			heartbeat:   "30",
+			attempts:    "-1",
+			delay:       "5",
+			shouldError: true,
+			expectedErr: "WEBSOCKET_RECONNECT_ATTEMPTS must be non-negative",
+		},
+		{
+			name:        "zero reconnect attempts (should allow)",
+			maxConns:    "5",
+			heartbeat:   "30",
+			attempts:    "0",
+			delay:       "5",
+			shouldError: false,
+		},
+		{
+			name:        "zero reconnect delay",
+			maxConns:    "5",
+			heartbeat:   "30",
+			attempts:    "3",
+			delay:       "0",
+			shouldError: true,
+			expectedErr: "WEBSOCKET_RECONNECT_DELAY must be positive",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			cleanup := setupTestEnv(t, map[string]string{
+				"DISCORD_CLIENT_ID":                  "client_id",
+				"DISCORD_CLIENT_SECRET":              "secret",
+				"DISCORD_REDIRECT_URI":               "http://localhost:8080/callback",
+				"DB_PASSWORD":                        "password",
+				"TOKEN_ENCRYPTION_KEY":               validKey,
+				"WEBSOCKET_MAX_CONNECTIONS_PER_USER": tt.maxConns,
+				"WEBSOCKET_HEARTBEAT_INTERVAL":       tt.heartbeat,
+				"WEBSOCKET_RECONNECT_ATTEMPTS":       tt.attempts,
+				"WEBSOCKET_RECONNECT_DELAY":          tt.delay,
+			})
+			defer cleanup()
+
+			cfg, err := Load()
+
+			if tt.shouldError {
+				assert.Error(t, err)
+				assert.Nil(t, cfg)
+				assert.Contains(t, err.Error(), tt.expectedErr)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, cfg)
+			}
+		})
+	}
+}
+
+func TestWebSocketEnabledParsing(t *testing.T) {
+	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+
+	tests := []struct {
+		name     string
+		value    string
+		expected bool
+	}{
+		{name: "true", value: "true", expected: true},
+		{name: "false", value: "false", expected: false},
+		{name: "TRUE", value: "TRUE", expected: false}, // case-sensitive
+		{name: "1", value: "1", expected: false},        // not "true"
+		{name: "empty defaults to true", value: "", expected: true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			envVars := map[string]string{
+				"DISCORD_CLIENT_ID":     "client_id",
+				"DISCORD_CLIENT_SECRET": "secret",
+				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DB_PASSWORD":           "password",
+				"TOKEN_ENCRYPTION_KEY":  validKey,
+			}
+			if tt.value != "" {
+				envVars["WEBSOCKET_ENABLED"] = tt.value
+			}
+
+			cleanup := setupTestEnv(t, envVars)
+			defer cleanup()
+
+			cfg, err := Load()
+			require.NoError(t, err)
+
+			assert.Equal(t, tt.expected, cfg.WebSocket.Enabled)
+		})
+	}
+}

@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	github.com/golang-migrate/migrate/v4 v4.17.0
 	github.com/google/uuid v1.6.0
+	github.com/gorilla/websocket v1.5.1
 	github.com/joho/godotenv v1.5.1
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.9.0
@@ -12,6 +13,7 @@ require (
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.27.0
 	go.uber.org/zap v1.27.1
 	golang.org/x/oauth2 v0.20.0
+	golang.org/x/time v0.5.0
 	google.golang.org/grpc v1.65.0
 	google.golang.org/protobuf v1.34.1
 )
