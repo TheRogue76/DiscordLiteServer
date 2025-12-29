@@ -288,7 +288,7 @@ let authService = Discord_Auth_V1_AuthServiceClient(client: client)
 
 // Initiate auth
 let response = try await authService.initAuth(request: Discord_Auth_V1_InitAuthRequest())
-await UIApplication.shared.open(URL(string: response.authURL)!)
+UIApplication.shared.open(URL(string: response.authURL)!)
 
 // Poll status
 var statusRequest = Discord_Auth_V1_GetAuthStatusRequest()
