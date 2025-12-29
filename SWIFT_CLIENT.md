@@ -142,7 +142,7 @@ class DiscordAuthManager: ObservableObject {
             // Open auth URL
             if let url = URL(string: response.authURL) {
                 #if os(iOS)
-                await UIApplication.shared.open(url)
+                UIApplication.shared.open(url)
                 #elseif os(macOS)
                 NSWorkspace.shared.open(url)
                 #endif
