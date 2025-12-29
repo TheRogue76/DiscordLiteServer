@@ -10,7 +10,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/parsascontentcorner/discordliteserver/api/proto"
+	authv1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1"
 	"github.com/parsascontentcorner/discordliteserver/internal/auth"
 	"github.com/parsascontentcorner/discordliteserver/internal/database"
 	"github.com/parsascontentcorner/discordliteserver/internal/models"
@@ -18,7 +18,7 @@ import (
 
 // AuthServer implements the gRPC AuthService
 type AuthServer struct {
-	authpb.UnimplementedAuthServiceServer
+	authv1.UnimplementedAuthServiceServer
 	db                 *database.DB
 	discordClient      *auth.DiscordClient
 	stateManager       *auth.StateManager
@@ -44,7 +44,7 @@ func NewAuthServer(
 }
 
 // InitAuth initiates the OAuth flow
-func (s *AuthServer) InitAuth(ctx context.Context, req *authpb.InitAuthRequest) (*authpb.InitAuthResponse, error) {
+func (s *AuthServer) InitAuth(ctx context.Context, req *authv1.InitAuthRequest) (*authv1.InitAuthResponse, error) {
 	// Generate or use provided session ID
 	sessionID := req.SessionId
 	if sessionID == "" {
@@ -87,7 +87,7 @@ func (s *AuthServer) InitAuth(ctx context.Context, req *authpb.InitAuthRequest) 
 		zap.String("auth_url", authURL),
 	)
 
-	return &authpb.InitAuthResponse{
+	return &authv1.InitAuthResponse{
 		AuthUrl:   authURL,
 		SessionId: sessionID,
 		State:     state,
@@ -95,7 +95,7 @@ func (s *AuthServer) InitAuth(ctx context.Context, req *authpb.InitAuthRequest) 
 }
 
 // GetAuthStatus checks the authentication status
-func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authpb.GetAuthStatusRequest) (*authpb.GetAuthStatusResponse, error) {
+func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authv1.GetAuthStatusRequest) (*authv1.GetAuthStatusResponse, error) {
 	sessionID := req.SessionId
 	if sessionID == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "session_id is required")
@@ -113,21 +113,21 @@ func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authpb.GetAuthStatu
 	// Check if session has expired
 	if session.IsExpired() {
 		s.logger.Warn("session has expired", zap.String("session_id", sessionID))
-		return &authpb.GetAuthStatusResponse{
-			Status:       authpb.AuthStatus_AUTH_STATUS_FAILED,
+		return &authv1.GetAuthStatusResponse{
+			Status:       authv1.AuthStatus_AUTH_STATUS_FAILED,
 			ErrorMessage: stringPtr("session has expired"),
 		}, nil
 	}
 
 	// Build response based on status
-	resp := &authpb.GetAuthStatusResponse{}
+	resp := &authv1.GetAuthStatusResponse{}
 
 	switch session.AuthStatus {
 	case models.AuthStatusPending:
-		resp.Status = authpb.AuthStatus_AUTH_STATUS_PENDING
+		resp.Status = authv1.AuthStatus_AUTH_STATUS_PENDING
 
 	case models.AuthStatusAuthenticated:
-		resp.Status = authpb.AuthStatus_AUTH_STATUS_AUTHENTICATED
+		resp.Status = authv1.AuthStatus_AUTH_STATUS_AUTHENTICATED
 
 		// Get user info if authenticated
 		if session.UserID.Valid {
@@ -137,7 +137,7 @@ func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authpb.GetAuthStatu
 				return nil, status.Errorf(codes.Internal, "failed to retrieve user information")
 			}
 
-			resp.User = &authpb.UserInfo{
+			resp.User = &authv1.UserInfo{
 				DiscordId:     user.DiscordID,
 				Username:      user.Username,
 				Discriminator: user.Discriminator.String,
@@ -147,13 +147,13 @@ func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authpb.GetAuthStatu
 		}
 
 	case models.AuthStatusFailed:
-		resp.Status = authpb.AuthStatus_AUTH_STATUS_FAILED
+		resp.Status = authv1.AuthStatus_AUTH_STATUS_FAILED
 		if session.ErrorMessage.Valid {
 			resp.ErrorMessage = stringPtr(session.ErrorMessage.String)
 		}
 
 	default:
-		resp.Status = authpb.AuthStatus_AUTH_STATUS_UNSPECIFIED
+		resp.Status = authv1.AuthStatus_AUTH_STATUS_UNSPECIFIED
 	}
 
 	s.logger.Debug("returning auth status",
@@ -165,7 +165,7 @@ func (s *AuthServer) GetAuthStatus(ctx context.Context, req *authpb.GetAuthStatu
 }
 
 // RevokeAuth revokes authentication for a session
-func (s *AuthServer) RevokeAuth(ctx context.Context, req *authpb.RevokeAuthRequest) (*authpb.RevokeAuthResponse, error) {
+func (s *AuthServer) RevokeAuth(ctx context.Context, req *authv1.RevokeAuthRequest) (*authv1.RevokeAuthResponse, error) {
 	sessionID := req.SessionId
 	if sessionID == "" {
 		return nil, status.Errorf(codes.InvalidArgument, "session_id is required")
@@ -199,7 +199,7 @@ func (s *AuthServer) RevokeAuth(ctx context.Context, req *authpb.RevokeAuthReque
 
 	s.logger.Info("auth revoked successfully", zap.String("session_id", sessionID))
 
-	return &authpb.RevokeAuthResponse{
+	return &authv1.RevokeAuthResponse{
 		Success: true,
 		Message: "authentication revoked successfully",
 	}, nil

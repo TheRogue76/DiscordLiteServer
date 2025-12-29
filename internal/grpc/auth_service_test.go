@@ -12,7 +12,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	authpb "github.com/parsascontentcorner/discordliteserver/api/proto"
+	authv1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1"
 	"github.com/parsascontentcorner/discordliteserver/internal/auth"
 	"github.com/parsascontentcorner/discordliteserver/internal/models"
 	"github.com/parsascontentcorner/discordliteserver/internal/testutil"
@@ -31,7 +31,7 @@ func TestInitAuth_AutoGenerateSessionID(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.InitAuthRequest{
+	req := &authv1.InitAuthRequest{
 		SessionId: "", // Empty - should auto-generate
 	}
 
@@ -71,7 +71,7 @@ func TestInitAuth_CustomSessionID(t *testing.T) {
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
 	customSessionID := "my-custom-session-id-123"
-	req := &authpb.InitAuthRequest{
+	req := &authv1.InitAuthRequest{
 		SessionId: customSessionID,
 	}
 
@@ -102,7 +102,7 @@ func TestInitAuth_URLFormat(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.InitAuthRequest{}
+	req := &authv1.InitAuthRequest{}
 
 	resp, err := server.InitAuth(ctx, req)
 
@@ -130,7 +130,7 @@ func TestGetAuthStatus_MissingSessionID(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: "",
 	}
 
@@ -159,7 +159,7 @@ func TestGetAuthStatus_SessionNotFound(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: "nonexistent-session-id",
 	}
 
@@ -196,7 +196,7 @@ func TestGetAuthStatus_PendingStatus(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: sessionID,
 	}
 
@@ -205,7 +205,7 @@ func TestGetAuthStatus_PendingStatus(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	assert.Equal(t, authpb.AuthStatus_AUTH_STATUS_PENDING, resp.Status)
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_PENDING, resp.Status)
 	assert.Nil(t, resp.User)
 	assert.Nil(t, resp.ErrorMessage)
 }
@@ -243,7 +243,7 @@ func TestGetAuthStatus_AuthenticatedWithUser(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: sessionID,
 	}
 
@@ -252,7 +252,7 @@ func TestGetAuthStatus_AuthenticatedWithUser(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	assert.Equal(t, authpb.AuthStatus_AUTH_STATUS_AUTHENTICATED, resp.Status)
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_AUTHENTICATED, resp.Status)
 	require.NotNil(t, resp.User)
 	assert.Equal(t, user.DiscordID, resp.User.DiscordId)
 	assert.Equal(t, user.Username, resp.User.Username)
@@ -283,7 +283,7 @@ func TestGetAuthStatus_FailedWithError(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: sessionID,
 	}
 
@@ -292,7 +292,7 @@ func TestGetAuthStatus_FailedWithError(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	assert.Equal(t, authpb.AuthStatus_AUTH_STATUS_FAILED, resp.Status)
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_FAILED, resp.Status)
 	assert.Nil(t, resp.User)
 	require.NotNil(t, resp.ErrorMessage)
 	assert.Equal(t, "invalid OAuth code", *resp.ErrorMessage)
@@ -321,7 +321,7 @@ func TestGetAuthStatus_ExpiredSession(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.GetAuthStatusRequest{
+	req := &authv1.GetAuthStatusRequest{
 		SessionId: sessionID,
 	}
 
@@ -331,7 +331,7 @@ func TestGetAuthStatus_ExpiredSession(t *testing.T) {
 	require.NotNil(t, resp)
 
 	// Should return FAILED status for expired session
-	assert.Equal(t, authpb.AuthStatus_AUTH_STATUS_FAILED, resp.Status)
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_FAILED, resp.Status)
 	require.NotNil(t, resp.ErrorMessage)
 	assert.Contains(t, *resp.ErrorMessage, "session has expired")
 }
@@ -349,7 +349,7 @@ func TestRevokeAuth_MissingSessionID(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.RevokeAuthRequest{
+	req := &authv1.RevokeAuthRequest{
 		SessionId: "",
 	}
 
@@ -377,7 +377,7 @@ func TestRevokeAuth_SessionNotFound(t *testing.T) {
 
 	server := NewAuthServer(db, discordClient, stateManager, logger, 24)
 
-	req := &authpb.RevokeAuthRequest{
+	req := &authv1.RevokeAuthRequest{
 		SessionId: "nonexistent-session",
 	}
 
@@ -414,7 +414,7 @@ func TestRevokeAuth_PendingSession(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.RevokeAuthRequest{
+	req := &authv1.RevokeAuthRequest{
 		SessionId: sessionID,
 	}
 
@@ -468,7 +468,7 @@ func TestRevokeAuth_AuthenticatedSessionWithToken(t *testing.T) {
 	err = db.CreateAuthSession(ctx, session)
 	require.NoError(t, err)
 
-	req := &authpb.RevokeAuthRequest{
+	req := &authv1.RevokeAuthRequest{
 		SessionId: sessionID,
 	}
 
@@ -503,7 +503,7 @@ func TestAuthServer_SessionExpiryConfiguration(t *testing.T) {
 	customExpiryHours := 48
 	server := NewAuthServer(db, discordClient, stateManager, logger, customExpiryHours)
 
-	req := &authpb.InitAuthRequest{}
+	req := &authv1.InitAuthRequest{}
 
 	resp, err := server.InitAuth(ctx, req)
 	require.NoError(t, err)

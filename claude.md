@@ -4,9 +4,9 @@
 
 **Project Name**: Discord Lite Server
 **Purpose**: Golang backend service for Discord OAuth authentication with gRPC API
-**Phase**: Phase 1 Complete (Authentication) | Phase 2 Planned (Channels/Messages)
-**Status**: Implementation Complete, Testing Pending
-**Last Updated**: 2025-12-27
+**Phase**: Phase 1 Complete (Authentication + Swift Client) | Phase 2 Planned (Channels/Messages)
+**Status**: Phase 11 Complete - Multi-Language API Support
+**Last Updated**: 2025-12-29
 
 ## Architecture Summary
 
@@ -144,6 +144,55 @@
 - [x] Protobuf plugins installed
 - [x] Binary successfully compiled (17MB)
 - [x] No compilation errors
+
+#### Phase 11: Multi-Language API Support (Swift Client)
+- [x] **Buf CLI Integration** - Modern protobuf tooling
+  - Replaced raw `protoc` commands with Buf
+  - Created `api/proto/buf.yaml` (module config, linting)
+  - Created `api/proto/buf.gen.yaml` (code generation config)
+  - Added Makefile targets: proto-go, proto-swift, proto-check, proto-clean
+- [x] **API Versioning (v1)** - Future-proof API structure
+  - Migrated proto files to `api/proto/discord/auth/v1/`
+  - Package changed from `discord.auth` to `discord.auth.v1`
+  - Go import path: `github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1`
+- [x] **Generated Code Management** - Committed to git
+  - Go code: `api/gen/go/discord/auth/v1/` (auth.pb.go, auth_grpc.pb.go)
+  - Swift code: `api/gen/swift/discord/auth/v1/` (auth.pb.swift, auth.connect.swift)
+  - Separated generated code from source proto files
+- [x] **Swift Package Manager Integration** - iOS/macOS client
+  - Created `Package.swift` at repository root (remote-installable)
+  - Dependencies: swift-protobuf (1.27.0+), connect-swift (1.0.0+)
+  - Platforms: iOS 15+, macOS 12+
+  - Target path points directly to `api/gen/swift` (no symlink needed)
+  - Successfully builds with Swift Package Manager
+  - Remote installation: `https://github.com/parsascontentcorner/discordliteserver`
+- [x] **Go Import Path Updates** - Migrated to new structure
+  - Updated `internal/grpc/auth_service.go` (authpb → authv1)
+  - Updated `internal/grpc/server.go` (authpb → authv1)
+  - Updated `internal/grpc/auth_service_test.go` (authpb → authv1)
+  - All 115+ tests passing after migration
+- [x] **Documentation** - Complete usage guides
+  - Created `ios-client/README.md` - Full Swift client documentation
+  - Updated `README.md` - Added Swift client usage examples
+  - Updated Makefile help text with new proto targets
+  - Updated project structure diagrams
+
+**Key Technologies:**
+- **Buf** (v1.60.0) - Modern protobuf build tool
+- **Connect-Swift** (1.0.0+) - Modern HTTP/1.1 & HTTP/2 RPC framework
+- **Swift Protobuf** (1.27.0+) - Swift protocol buffers runtime
+
+**Breaking Changes:**
+- Go import path changed from `api/proto` to `api/gen/go/discord/auth/v1`
+- Package alias changed from `authpb` to `authv1`
+- Proto package changed from `discord.auth` to `discord.auth.v1`
+
+**Benefits:**
+- Multi-language support (Go + Swift, extensible to TypeScript, Python, etc.)
+- API versioning for backward compatibility
+- Modern tooling with Buf (linting, breaking change detection)
+- Type-safe Swift client with async/await
+- Generated code committed to git (reproducible builds)
 
 ### ⏳ Testing Status
 
@@ -759,6 +808,6 @@ For questions or issues during development:
 
 ---
 
-**Last Updated**: 2025-12-27
-**Status**: Phase 1 Implementation Complete, Testing Pending
-**Next Milestone**: First Successful OAuth Flow
+**Last Updated**: 2025-12-29
+**Status**: Phase 11 Complete - Multi-Language API Support (Buf + Swift Client)
+**Next Milestone**: Phase 2 - Channels/Messages Feature Set

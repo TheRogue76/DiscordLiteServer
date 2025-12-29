@@ -1,20 +1,26 @@
-.PHONY: proto build run test clean migrate install-tools docker-build docker-up docker-down help fmt fmt-check lint ci
+.PHONY: proto proto-go proto-swift proto-check proto-clean build run test clean migrate install-tools install-buf docker-build docker-up docker-down help fmt fmt-check lint ci
 
 # Variables
 BINARY_NAME=discordliteserver
 PROTO_DIR=api/proto
 OUTPUT_DIR=bin
+BUF_VERSION=1.47.2
 
 # Help command
 help:
 	@echo "Available targets:"
-	@echo "  proto          - Generate Go code from protobuf definitions"
+	@echo "  proto          - Generate Go and Swift code from protobuf definitions"
+	@echo "  proto-go       - Generate only Go code"
+	@echo "  proto-swift    - Generate only Swift code"
+	@echo "  proto-check    - Validate protobuf definitions"
+	@echo "  proto-clean    - Remove generated protobuf code"
 	@echo "  build          - Build the server binary"
 	@echo "  run            - Run the server"
 	@echo "  test           - Run tests"
 	@echo "  clean          - Remove build artifacts"
 	@echo "  migrate        - Run database migrations"
 	@echo "  install-tools  - Install required development tools"
+	@echo "  install-buf    - Install Buf CLI"
 	@echo "  docker-build   - Build Docker image"
 	@echo "  docker-up      - Start services with docker-compose"
 	@echo "  docker-down    - Stop services with docker-compose"
@@ -23,22 +29,64 @@ help:
 	@echo "  fmt            - Format code with go fmt"
 	@echo "  fmt-check      - Check if code is formatted (CI mode)"
 	@echo "  lint           - Run golangci-lint"
-	@echo "  ci             - Run all CI checks locally (fmt-check, lint, test)"
+	@echo "  ci             - Run all CI checks locally (fmt-check, lint, proto-check, test)"
 
 # Install required tools (protoc, protoc-gen-go, etc.)
-install-tools:
-	@echo "Installing protoc plugins..."
-	go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
-	go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
-	@echo "Tools installed successfully"
+install-tools: install-buf
+	@echo "All protobuf tools installed successfully"
 
-# Generate protobuf code
-proto:
-	@echo "Generating protobuf code..."
-	protoc --go_out=. --go_opt=paths=source_relative \
-		--go-grpc_out=. --go-grpc_opt=paths=source_relative \
-		$(PROTO_DIR)/auth.proto
-	@echo "Protobuf code generated successfully"
+# Install Buf CLI
+install-buf:
+	@echo "Checking for Buf CLI..."
+	@if ! command -v buf >/dev/null 2>&1; then \
+		echo "Installing Buf CLI..."; \
+		if [ "$$(uname -s)" = "Darwin" ]; then \
+			brew install bufbuild/buf/buf || brew install buf; \
+		elif [ "$$(uname -s)" = "Linux" ]; then \
+			curl -sSL "https://github.com/bufbuild/buf/releases/download/v$(BUF_VERSION)/buf-$$(uname -s)-$$(uname -m)" -o /tmp/buf; \
+			chmod +x /tmp/buf; \
+			sudo mv /tmp/buf /usr/local/bin/buf; \
+		else \
+			echo "Please install Buf manually: https://buf.build/docs/installation"; \
+			exit 1; \
+		fi; \
+	else \
+		echo "Buf CLI already installed: $$(buf --version)"; \
+	fi
+
+# Generate all protobuf code (Go + Swift)
+proto: install-buf
+	@echo "Generating Go and Swift protobuf code..."
+	cd $(PROTO_DIR) && buf generate
+	@echo "Protobuf code generated successfully!"
+	@echo "  Go:    api/gen/go/discord/auth/v1/"
+	@echo "  Swift: api/gen/swift/discord/auth/v1/"
+
+# Generate only Go code
+proto-go: install-buf
+	@echo "Generating Go protobuf code..."
+	cd $(PROTO_DIR) && buf generate --template buf.gen.go.yaml --path discord/auth/v1
+	@echo "Go code generated in api/gen/go/"
+
+# Generate only Swift code
+proto-swift: install-buf
+	@echo "Generating Swift protobuf code..."
+	cd $(PROTO_DIR) && buf generate --template buf.gen.swift.yaml --path discord/auth/v1
+	@echo "Swift code generated in api/gen/swift/"
+
+# Validate protobuf definitions
+proto-check: install-buf
+	@echo "Validating protobuf definitions..."
+	cd $(PROTO_DIR) && buf lint
+	cd $(PROTO_DIR) && buf breaking --against '.git#branch=main' || true
+	@echo "Protobuf validation complete"
+
+# Clean generated protobuf code
+proto-clean:
+	@echo "Cleaning generated protobuf code..."
+	rm -rf api/gen/go/*
+	rm -rf api/gen/swift/*
+	@echo "Generated code cleaned"
 
 # Build the binary
 build:
@@ -93,8 +141,9 @@ clean-test:
 clean:
 	@echo "Cleaning build artifacts..."
 	rm -rf $(OUTPUT_DIR)
-	rm -f $(PROTO_DIR)/*.pb.go
 	@echo "Clean complete"
+	@echo "Note: Generated proto files preserved (committed to git)"
+	@echo "      Run 'make proto-clean' to remove them"
 
 # Docker commands
 docker-build:
@@ -139,7 +188,7 @@ lint:
 	golangci-lint run --timeout=5m --config=.golangci.yml
 
 # Run all CI checks locally
-ci: fmt-check lint test
+ci: fmt-check lint proto-check test
 	@echo ""
 	@echo "✅ All CI checks passed!"
 

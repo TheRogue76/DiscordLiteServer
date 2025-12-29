@@ -1,0 +1,32 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/parsascontentcorner/discordliteserver/api/gen/go
+plugins:
+  # Go: Protocol Buffers
+  - remote: buf.build/protocolbuffers/go
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+
+  # Go: gRPC
+  - remote: buf.build/grpc/go
+    out: ../gen/go
+    opt:
+      - paths=source_relative
+
+  # Swift: Protocol Buffers
+  - remote: buf.build/apple/swift
+    out: ../gen/swift
+    opt:
+      - Visibility=Public
+
+  # Swift: Connect-Swift
+  - remote: buf.build/connectrpc/swift
+    out: ../gen/swift
+    opt:
+      - Visibility=Public
+      - GenerateAsyncMethods=true
+      - GenerateCallbackMethods=true

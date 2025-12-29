@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-package discord.auth;
+package discord.auth.v1;
 
-option go_package = "github.com/parsascontentcorner/discordliteserver/api/proto;authpb";
+option go_package = "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1;authv1";
 
 // AuthService handles Discord OAuth authentication
 service AuthService {

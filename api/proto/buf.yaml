@@ -1,0 +1,11 @@
+version: v2
+modules:
+  - path: .
+    name: buf.build/parsascontentcorner/discordliteserver
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
+  ignore_unstable_packages: true

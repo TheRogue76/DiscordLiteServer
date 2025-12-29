@@ -250,6 +250,52 @@ resp, err := client.RevokeAuth(ctx, &authpb.RevokeAuthRequest{
 })
 ```
 
+### Swift Client (iOS/macOS)
+
+A Swift Package Manager package is available for iOS and macOS applications at the repository root:
+
+**Installation:**
+
+Add to your Xcode project or `Package.swift`:
+```swift
+dependencies: [
+    .package(url: "https://github.com/parsascontentcorner/discordliteserver", from: "1.0.0")
+]
+```
+
+Or for local development:
+```swift
+dependencies: [
+    .package(path: "../DiscordLiteServer")
+]
+```
+
+**Usage:**
+
+```swift
+import DiscordLiteAPI
+import Connect
+
+// Create client
+let client = ProtocolClient(
+    httpClient: URLSessionHTTPClient(),
+    config: ProtocolClientConfig(
+        host: "http://localhost:50051",
+        networkProtocol: .connect
+    )
+)
+let authService = Discord_Auth_V1_AuthServiceClient(client: client)
+
+// Initiate auth
+let response = try await authService.initAuth(request: Discord_Auth_V1_InitAuthRequest())
+UIApplication.shared.open(URL(string: response.authURL)!)
+
+// Poll status
+var statusRequest = Discord_Auth_V1_GetAuthStatusRequest()
+statusRequest.sessionID = response.sessionID
+let status = try await authService.getAuthStatus(request: statusRequest)
+```
+
 ### Testing with grpcurl
 
 ```bash
@@ -279,16 +325,28 @@ DiscordLiteServer/
 │   ├── grpc/            # gRPC server & service
 │   ├── http/            # HTTP server & handlers
 │   └── models/          # Data models
-├── api/proto/           # Protobuf definitions
+├── api/
+│   ├── proto/           # Protobuf definitions (versioned)
+│   │   ├── buf.yaml     # Buf module config
+│   │   ├── buf.gen.yaml # Code generation config
+│   │   └── discord/auth/v1/  # v1 API definitions
+│   └── gen/             # Generated code (committed to git)
+│       ├── go/          # Go gRPC code
+│       └── swift/       # Swift Connect code (SPM sources)
 ├── pkg/logger/          # Logging utilities
-└── scripts/             # Helper scripts
+├── scripts/             # Helper scripts
+└── Package.swift        # Swift Package Manager manifest
 ```
 
 ### Make Commands
 
 ```bash
 make help           # Show all commands
-make proto          # Generate protobuf code
+make proto          # Generate Go and Swift protobuf code
+make proto-go       # Generate only Go code
+make proto-swift    # Generate only Swift code
+make proto-check    # Validate protobuf definitions (lint + breaking)
+make proto-clean    # Remove generated code
 make build          # Build binary
 make run            # Run locally
 make test           # Run tests
