@@ -79,7 +79,7 @@ while true {
     let statusResponse = try await authService.getAuthStatus(request: statusRequest)
 
     switch statusResponse.status {
-    case .authStatusPending:
+    case .pending:
         try await Task.sleep(nanoseconds: 2_000_000_000) // Wait 2 seconds
 
     case .authStatusAuthenticated:
