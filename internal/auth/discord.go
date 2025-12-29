@@ -51,28 +51,28 @@ type DiscordGuild struct {
 
 // DiscordChannel represents a Discord channel from the API
 type DiscordChannel struct {
-	ID                   string `json:"id"`
-	Type                 int    `json:"type"`
-	GuildID              string `json:"guild_id"`
-	Position             int    `json:"position"`
-	Name                 string `json:"name"`
-	Topic                string `json:"topic"`
-	NSFW                 bool   `json:"nsfw"`
-	LastMessageID        string `json:"last_message_id"`
-	ParentID             string `json:"parent_id"`
+	ID            string `json:"id"`
+	Type          int    `json:"type"`
+	GuildID       string `json:"guild_id"`
+	Position      int    `json:"position"`
+	Name          string `json:"name"`
+	Topic         string `json:"topic"`
+	NSFW          bool   `json:"nsfw"`
+	LastMessageID string `json:"last_message_id"`
+	ParentID      string `json:"parent_id"`
 }
 
 // DiscordMessage represents a Discord message from the API
 type DiscordMessage struct {
-	ID              string              `json:"id"`
-	ChannelID       string              `json:"channel_id"`
-	Author          DiscordUser         `json:"author"`
-	Content         string              `json:"content"`
-	Timestamp       string              `json:"timestamp"`
-	EditedTimestamp *string             `json:"edited_timestamp"`
-	Type            int                 `json:"type"`
+	ID               string                   `json:"id"`
+	ChannelID        string                   `json:"channel_id"`
+	Author           DiscordUser              `json:"author"`
+	Content          string                   `json:"content"`
+	Timestamp        string                   `json:"timestamp"`
+	EditedTimestamp  *string                  `json:"edited_timestamp"`
+	Type             int                      `json:"type"`
 	MessageReference *DiscordMessageReference `json:"message_reference"`
-	Attachments     []DiscordAttachment `json:"attachments"`
+	Attachments      []DiscordAttachment      `json:"attachments"`
 }
 
 // DiscordMessageReference represents a message reference (for replies)
@@ -242,6 +242,8 @@ func (dc *DiscordClient) SetRateLimiter(rl *ratelimit.RateLimiter) {
 // SetBaseURL sets the base URL for the Discord API (used for testing)
 func (dc *DiscordClient) SetBaseURL(url string) {
 	dc.baseURL = url
+	// Also update OAuth token endpoint for testing
+	dc.config.Endpoint.TokenURL = url + "/oauth2/token"
 }
 
 // RefreshToken refreshes an OAuth token using the refresh token

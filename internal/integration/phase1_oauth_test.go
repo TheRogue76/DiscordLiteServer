@@ -37,7 +37,7 @@ type testOAuthServer struct {
 	mockDiscord     *httptest.Server
 	discordClient   *auth.DiscordClient
 	stateManager    *auth.StateManager
-	oauthHandler    *oauth.Handler
+	oauthHandlers   *oauth.Handlers
 	authServiceImpl *grpcserver.AuthServer
 }
 
@@ -90,9 +90,8 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 		},
 		Security: config.SecurityConfig{
 			TokenEncryptionKey: []byte("12345678901234567890123456789012"),
-		},
-		Session: config.SessionConfig{
-			ExpiryHours: 24,
+			SessionExpiryHours: 24,
+			StateExpiryMinutes: 10,
 		},
 	}
 
@@ -104,13 +103,16 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 	discordClient.SetBaseURL(mockDiscord.URL)
 
 	// Create state manager
-	stateManager := auth.NewStateManager(db, logger)
+	stateManager := auth.NewStateManager(db, cfg.Security.StateExpiryMinutes)
 
 	// Create OAuth handler
-	oauthHandler := oauth.NewHandler(db, discordClient, stateManager, logger)
+	oauthHandler := auth.NewOAuthHandler(db, discordClient, stateManager, logger)
+
+	// Create OAuth HTTP handlers
+	oauthHandlers := oauth.NewHandlers(oauthHandler, logger)
 
 	// Create gRPC server
-	authServiceImpl := grpcserver.NewAuthServer(db, discordClient, stateManager, logger, cfg)
+	authServiceImpl := grpcserver.NewAuthServer(db, discordClient, stateManager, logger, cfg.Security.SessionExpiryHours)
 	grpcSrv := grpc.NewServer()
 	authv1.RegisterAuthServiceServer(grpcSrv, authServiceImpl)
 
@@ -121,11 +123,8 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 
 	// Create HTTP server with OAuth callback
 	mux := http.NewServeMux()
-	mux.HandleFunc("/auth/callback", oauthHandler.HandleCallback)
-	mux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		w.Write([]byte("OK"))
-	})
+	mux.HandleFunc("/auth/callback", oauthHandlers.CallbackHandler)
+	mux.HandleFunc("/health", oauthHandlers.HealthHandler)
 	httpSrv := httptest.NewServer(mux)
 
 	// Update redirect URI to match test server
@@ -147,7 +146,7 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 		mockDiscord:     mockDiscord,
 		discordClient:   discordClient,
 		stateManager:    stateManager,
-		oauthHandler:    oauthHandler,
+		oauthHandlers:   oauthHandlers,
 		authServiceImpl: authServiceImpl,
 	}
 }
@@ -247,7 +246,7 @@ func TestCompleteOAuthFlow_Success(t *testing.T) {
 	require.NoError(t, err)
 
 	// Step 8: Verify session and token are deleted
-	session, err := ts.db.GetAuthSession(ctx, sessionID)
+	_, err = ts.db.GetAuthSession(ctx, sessionID)
 	assert.Error(t, err) // Should not exist
 
 	_, err = ts.db.GetOAuthToken(ctx, user.ID)
@@ -272,17 +271,17 @@ func TestOAuthFlow_InvalidState(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	// Verify callback returned error page
-	assert.Equal(t, http.StatusOK, resp.StatusCode) // Still 200 but with error message
+	// Verify callback returned error page (400 Bad Request)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 
-	// Step 3: Verify session is marked as failed
+	// Step 3: Verify session is still pending (invalid state prevents update)
 	time.Sleep(200 * time.Millisecond) // Give it time to update
 	statusResp, err := client.GetAuthStatus(ctx, &authv1.GetAuthStatusRequest{
 		SessionId: sessionID,
 	})
 	require.NoError(t, err)
-	// Session should still be pending or failed (not authenticated)
-	assert.NotEqual(t, authv1.AuthStatus_AUTH_STATUS_AUTHENTICATED, statusResp.Status)
+	// Session should still be pending (callback failed so status wasn't updated)
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_PENDING, statusResp.Status)
 }
 
 func TestOAuthFlow_ExpiredState(t *testing.T) {
@@ -303,11 +302,11 @@ func TestOAuthFlow_ExpiredState(t *testing.T) {
 
 	// Step 2: Manually expire the state in database
 	// (In production, states expire after 10 minutes)
-	err = ts.db.ExecContext(ctx, `
+	_, err = ts.db.ExecContext(ctx, `
 		UPDATE oauth_states
 		SET expires_at = NOW() - INTERVAL '1 hour'
 		WHERE state = $1
-	`, state).Err()
+	`, state)
 	require.NoError(t, err)
 
 	// Step 3: Try callback with expired state
@@ -316,8 +315,8 @@ func TestOAuthFlow_ExpiredState(t *testing.T) {
 	require.NoError(t, err)
 	defer resp.Body.Close()
 
-	// Should return error page
-	assert.Equal(t, http.StatusOK, resp.StatusCode)
+	// Should return error page (400 Bad Request for expired state)
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
 }
 
 func TestOAuthFlow_MultipleSimultaneousSessions(t *testing.T) {
@@ -379,11 +378,11 @@ func TestOAuthFlow_SessionExpiry(t *testing.T) {
 	sessionID := initResp.SessionId
 
 	// Step 2: Manually expire the session
-	err = ts.db.ExecContext(ctx, `
+	_, err = ts.db.ExecContext(ctx, `
 		UPDATE auth_sessions
 		SET expires_at = NOW() - INTERVAL '1 hour'
 		WHERE session_id = $1
-	`, sessionID).Err()
+	`, sessionID)
 	require.NoError(t, err)
 
 	// Step 3: Try to get status of expired session
@@ -391,7 +390,10 @@ func TestOAuthFlow_SessionExpiry(t *testing.T) {
 		SessionId: sessionID,
 	})
 	require.NoError(t, err)
-	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_EXPIRED, statusResp.Status)
+	// Expired sessions return FAILED status with "session has expired" error message
+	assert.Equal(t, authv1.AuthStatus_AUTH_STATUS_FAILED, statusResp.Status)
+	assert.NotNil(t, statusResp.ErrorMessage)
+	assert.Contains(t, *statusResp.ErrorMessage, "expired")
 }
 
 func TestOAuthFlow_RevokeUnauthenticatedSession(t *testing.T) {
