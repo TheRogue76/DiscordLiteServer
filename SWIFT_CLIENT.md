@@ -65,7 +65,7 @@ let initResponse = try await authService.initAuth(request: initRequest)
 // Open auth URL in browser
 if let url = URL(string: initResponse.authURL) {
     #if os(iOS)
-    await UIApplication.shared.open(url)
+    UIApplication.shared.open(url)
     #elseif os(macOS)
     NSWorkspace.shared.open(url)
     #endif
