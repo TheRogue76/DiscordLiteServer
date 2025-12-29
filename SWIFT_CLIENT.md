@@ -86,7 +86,7 @@ while true {
         print("Authenticated as: \(statusResponse.user?.username ?? "Unknown")")
         return statusResponse.user
 
-    case .authStatusFailed:
+    case .failed:
         throw AuthError.failed(statusResponse.errorMessage ?? "Unknown error")
 
     default:
