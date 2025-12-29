@@ -285,10 +285,10 @@ The main authentication service.
 
 ```swift
 public enum Discord_Auth_V1_AuthStatus {
-    case authStatusUnspecified  // Default, unknown
-    case authStatusPending      // Waiting for user
-    case authStatusAuthenticated // Successfully authenticated
-    case authStatusFailed       // Authentication failed
+    case unspecified      // Default, unknown
+    case pending          // Waiting for user
+    case authenticated    // Successfully authenticated
+    case failed           // Authentication failed
 }
 ```
 
