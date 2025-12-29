@@ -82,7 +82,7 @@ while true {
     case .pending:
         try await Task.sleep(nanoseconds: 2_000_000_000) // Wait 2 seconds
 
-    case .authStatusAuthenticated:
+    case .authenticated:
         print("Authenticated as: \(statusResponse.user?.username ?? "Unknown")")
         return statusResponse.user
 
