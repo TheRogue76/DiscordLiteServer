@@ -115,15 +115,14 @@ func setupTestDB(ctx context.Context) (*database.DB, func(), error) {
 // StartTestServer starts a gRPC server on a random port for testing.
 // Returns the listener so the test can get the address.
 func StartTestServer(srv *grpc.Server) (net.Listener, error) {
+	//nolint:noctx // Test server doesn't need context
 	listener, err := net.Listen("tcp", "127.0.0.1:0")
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen: %w", err)
 	}
 
 	go func() {
-		if err := srv.Serve(listener); err != nil {
-			// Server stopped or error - ignore in test
-		}
+		_ = srv.Serve(listener) // Server stopped or error - expected during test cleanup
 	}()
 
 	return listener, nil
@@ -136,11 +135,11 @@ func (m *mockWebSocketManager) IsEnabled() bool {
 	return false
 }
 
-func (m *mockWebSocketManager) Subscribe(ctx context.Context, userID int64, channelIDs []string) (<-chan *messagev1.MessageEvent, error) {
+func (m *mockWebSocketManager) Subscribe(_ context.Context, _ int64, _ []string) (<-chan *messagev1.MessageEvent, error) {
 	return nil, fmt.Errorf("WebSocket is disabled in tests")
 }
 
-func (m *mockWebSocketManager) Unsubscribe(userID int64, channelIDs []string) {}
+func (m *mockWebSocketManager) Unsubscribe(_ int64, _ []string) {}
 
 // TestSuite is the test suite for Phase 2 integration tests
 type TestSuite struct {
@@ -225,6 +224,7 @@ func setupTestSuite(t *testing.T) *TestSuite {
 	require.NoError(t, err)
 
 	// Create gRPC clients
+	//nolint:staticcheck // grpc.Dial is deprecated but still supported in 1.x
 	grpcConn, err := grpc.Dial(listener.Addr().String(), grpc.WithTransportCredentials(insecure.NewCredentials()))
 	require.NoError(t, err)
 
@@ -234,7 +234,7 @@ func setupTestSuite(t *testing.T) *TestSuite {
 
 	// Cleanup function
 	cleanup := func() {
-		grpcConn.Close()
+		_ = grpcConn.Close()
 		grpcServer.Stop()
 		mockDiscord.Close()
 		dbCleanup()

@@ -8,6 +8,7 @@ import (
 // WebSocketStatus represents the status of a WebSocket connection
 type WebSocketStatus string
 
+// WebSocket connection status constants
 const (
 	WebSocketStatusConnecting   WebSocketStatus = "connecting"
 	WebSocketStatusConnected    WebSocketStatus = "connected"

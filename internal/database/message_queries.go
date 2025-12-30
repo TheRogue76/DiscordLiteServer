@@ -216,7 +216,7 @@ func (db *DB) GetMessagesByChannelID(ctx context.Context, channelID int64, limit
 	if err != nil {
 		return nil, fmt.Errorf("failed to query messages: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var messages []*models.Message
 	for rows.Next() {
@@ -263,7 +263,7 @@ func (db *DB) GetMessageAttachmentsByMessageID(ctx context.Context, messageID in
 	if err != nil {
 		return nil, fmt.Errorf("failed to query attachments: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var attachments []*models.MessageAttachment
 	for rows.Next() {

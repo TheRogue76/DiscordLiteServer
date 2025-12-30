@@ -379,16 +379,16 @@ func (s *MessageServer) convertMessagesToProto(ctx context.Context, messages []*
 				Filename:     att.Filename,
 				Url:          att.URL,
 				ProxyUrl:     att.ProxyURL.String,
-				SizeBytes:    int32(att.SizeBytes),
+				SizeBytes:    int32(att.SizeBytes), // #nosec G115 - file size in safe range
 				ContentType:  att.ContentType.String,
 			}
 
 			if att.Width.Valid {
-				width := int32(att.Width.Int64)
+				width := int32(att.Width.Int64) // #nosec G115 - image width
 				protoAtt.Width = &width
 			}
 			if att.Height.Valid {
-				height := int32(att.Height.Int64)
+				height := int32(att.Height.Int64) // #nosec G115 - image height
 				protoAtt.Height = &height
 			}
 
@@ -406,7 +406,7 @@ func (s *MessageServer) convertMessagesToProto(ctx context.Context, messages []*
 			},
 			Content:     m.Content.String,
 			Timestamp:   m.Timestamp.UnixMilli(),
-			Type:        messagev1.MessageType(m.MessageType),
+			Type:        messagev1.MessageType(m.MessageType), // #nosec G115 - message type is enum
 			Attachments: protoAttachments,
 		}
 

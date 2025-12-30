@@ -207,7 +207,7 @@ func (db *DB) GetCacheStats(ctx context.Context) (map[string]int64, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to get cache stats: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	stats := make(map[string]int64)
 	for rows.Next() {

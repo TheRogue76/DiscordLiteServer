@@ -31,40 +31,40 @@ const (
 	opHello               = 10 // Receive: Hello (heartbeat interval)
 	opHeartbeatACK        = 11 // Receive: Heartbeat ACK
 
-	// Gateway close codes
-	closeNormalClosure       = 1000
-	closeGoingAway           = 1001
-	closeUnknownError        = 4000
-	closeUnknownOpcode       = 4001
-	closeDecodeError         = 4002
-	closeNotAuthenticated    = 4003
-	closeAuthenticationFailed = 4004
-	closeAlreadyAuthenticated = 4005
-	closeInvalidSeq          = 4007
-	closeRateLimited         = 4008
-	closeSessionTimedOut     = 4009
-	closeInvalidShard        = 4010
-	closeShardingRequired    = 4011
-	closeInvalidAPIVersion   = 4012
-	closeInvalidIntents      = 4013
-	closeDisallowedIntents   = 4014
+	// Gateway close codes (defined for future error handling)
+	closeNormalClosure        = 1000 //nolint:unused
+	closeGoingAway            = 1001 //nolint:unused
+	closeUnknownError         = 4000 //nolint:unused
+	closeUnknownOpcode        = 4001 //nolint:unused
+	closeDecodeError          = 4002 //nolint:unused
+	closeNotAuthenticated     = 4003 //nolint:unused
+	closeAuthenticationFailed = 4004 //nolint:unused
+	closeAlreadyAuthenticated = 4005 //nolint:unused
+	closeInvalidSeq           = 4007 //nolint:unused
+	closeRateLimited          = 4008 //nolint:unused
+	closeSessionTimedOut      = 4009 //nolint:unused
+	closeInvalidShard         = 4010 //nolint:unused
+	closeShardingRequired     = 4011 //nolint:unused
+	closeInvalidAPIVersion    = 4012 //nolint:unused
+	closeInvalidIntents       = 4013 //nolint:unused
+	closeDisallowedIntents    = 4014 //nolint:unused
 )
 
 // GatewayConnection represents a connection to Discord Gateway
 type GatewayConnection struct {
-	userID       int64
-	accessToken  string
-	db           *database.DB
-	logger       *zap.Logger
+	userID      int64
+	accessToken string
+	db          *database.DB
+	logger      *zap.Logger
 
 	// WebSocket connection
 	conn   *websocket.Conn
 	connMu sync.RWMutex
 
 	// Session info
-	sessionID     string
-	sequenceNum   int64
-	sequenceMu    sync.RWMutex
+	sessionID   string
+	sequenceNum int64
+	sequenceMu  sync.RWMutex
 
 	// Heartbeat
 	heartbeatInterval time.Duration
@@ -76,7 +76,7 @@ type GatewayConnection struct {
 	closeOnce sync.Once
 
 	// Status
-	connected bool
+	connected   bool
 	connectedMu sync.RWMutex
 }
 
@@ -307,11 +307,11 @@ func (gc *GatewayConnection) handleReady(ctx context.Context, data json.RawMessa
 
 	// Store session in database
 	session := &models.WebSocketSession{
-		SessionID:    gc.sessionID,
-		UserID:       gc.userID,
-		GatewayURL:   gatewayURL,
-		Status:       models.WebSocketStatusConnected,
-		ExpiresAt:    time.Now().Add(24 * time.Hour),
+		SessionID:  gc.sessionID,
+		UserID:     gc.userID,
+		GatewayURL: gatewayURL,
+		Status:     models.WebSocketStatusConnected,
+		ExpiresAt:  time.Now().Add(24 * time.Hour),
 	}
 
 	if err := gc.db.CreateWebSocketSession(ctx, session); err != nil {
@@ -384,7 +384,7 @@ func (gc *GatewayConnection) Close() {
 
 		gc.connMu.Lock()
 		if gc.conn != nil {
-			gc.conn.Close()
+			_ = gc.conn.Close()
 			gc.conn = nil
 		}
 		gc.connMu.Unlock()

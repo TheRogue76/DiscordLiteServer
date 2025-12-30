@@ -272,14 +272,14 @@ func (m *Manager) GetConnectionStats() map[string]int {
 	stats := make(map[string]int)
 
 	connectionCount := 0
-	m.connections.Range(func(key, value interface{}) bool {
+	m.connections.Range(func(_, _ interface{}) bool {
 		connectionCount++
 		return true
 	})
 	stats["active_connections"] = connectionCount
 
 	subscriptionCount := 0
-	m.subscriptions.Range(func(key, value interface{}) bool {
+	m.subscriptions.Range(func(_, _ interface{}) bool {
 		subscriptionCount++
 		return true
 	})
@@ -289,7 +289,7 @@ func (m *Manager) GetConnectionStats() map[string]int {
 }
 
 // Shutdown gracefully shuts down all Gateway connections
-func (m *Manager) Shutdown(ctx context.Context) error {
+func (m *Manager) Shutdown(_ context.Context) error {
 	m.logger.Info("shutting down WebSocket manager")
 
 	// Close all connections
@@ -302,9 +302,9 @@ func (m *Manager) Shutdown(ctx context.Context) error {
 	})
 
 	// Close all event channels
-	m.eventChannels.Range(func(key, value interface{}) bool {
+	m.eventChannels.Range(func(_, value interface{}) bool {
 		userChannels := value.(*sync.Map)
-		userChannels.Range(func(chKey, chValue interface{}) bool {
+		userChannels.Range(func(_, chValue interface{}) bool {
 			eventChan := chValue.(chan *messagev1.MessageEvent)
 			close(eventChan)
 			return true

@@ -118,7 +118,7 @@ func (db *DB) GetGuildsByUserID(ctx context.Context, userID int64) ([]*models.Gu
 	if err != nil {
 		return nil, fmt.Errorf("failed to query guilds: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var guilds []*models.Guild
 	for rows.Next() {

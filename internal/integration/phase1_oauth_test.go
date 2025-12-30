@@ -1,3 +1,4 @@
+// Package integration contains integration tests for Phase 1 OAuth flow.
 package integration
 
 import (
@@ -54,7 +55,7 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 		case "/oauth2/token":
 			// Mock token exchange
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"access_token":  "mock_access_token",
 				"token_type":    "Bearer",
 				"expires_in":    604800,
@@ -64,7 +65,7 @@ func setupOAuthIntegrationTest(t *testing.T) *testOAuthServer {
 		case "/users/@me":
 			// Mock user info
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(map[string]interface{}{
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{
 				"id":            "123456789",
 				"username":      "testuser",
 				"discriminator": "1234",
@@ -159,7 +160,7 @@ func (ts *testOAuthServer) createGRPCClient(t *testing.T) authv1.AuthServiceClie
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	require.NoError(t, err)
-	t.Cleanup(func() { conn.Close() })
+	t.Cleanup(func() { _ = conn.Close() })
 
 	return authv1.NewAuthServiceClient(conn)
 }
@@ -201,9 +202,10 @@ func TestCompleteOAuthFlow_Success(t *testing.T) {
 
 	// Step 4: Simulate OAuth callback (user authenticated with Discord)
 	callbackURL := fmt.Sprintf("%s/auth/callback?code=test_auth_code&state=%s", ts.httpServer.URL, state)
-	resp, err := http.Get(callbackURL)
+	//nolint:noctx // Test doesn't need context
+	resp, err := http.Get(callbackURL) // #nosec G107 - test URL
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Verify callback returned success page
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
@@ -267,9 +269,10 @@ func TestOAuthFlow_InvalidState(t *testing.T) {
 
 	// Step 2: Try callback with invalid state
 	callbackURL := fmt.Sprintf("%s/auth/callback?code=test_code&state=invalid_state_token", ts.httpServer.URL)
-	resp, err := http.Get(callbackURL)
+	//nolint:noctx // Test doesn't need context
+	resp, err := http.Get(callbackURL) // #nosec G107 - test URL
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Verify callback returned error page (400 Bad Request)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -311,9 +314,10 @@ func TestOAuthFlow_ExpiredState(t *testing.T) {
 
 	// Step 3: Try callback with expired state
 	callbackURL := fmt.Sprintf("%s/auth/callback?code=test_code&state=%s", ts.httpServer.URL, state)
-	resp, err := http.Get(callbackURL)
+	//nolint:noctx // Test doesn't need context
+	resp, err := http.Get(callbackURL) // #nosec G107 - test URL
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Should return error page (400 Bad Request for expired state)
 	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
@@ -342,9 +346,10 @@ func TestOAuthFlow_MultipleSimultaneousSessions(t *testing.T) {
 
 	// Complete OAuth for session 2 only
 	callbackURL := fmt.Sprintf("%s/auth/callback?code=test_code&state=%s", ts.httpServer.URL, states[1])
-	resp, err := http.Get(callbackURL)
+	//nolint:noctx // Test doesn't need context
+	resp, err := http.Get(callbackURL) // #nosec G107 - test URL
 	require.NoError(t, err)
-	resp.Body.Close()
+	_ = resp.Body.Close()
 
 	time.Sleep(200 * time.Millisecond)
 
@@ -447,9 +452,10 @@ func TestOAuthFlow_HealthCheck(t *testing.T) {
 	defer ts.cleanup()
 
 	// Test HTTP health endpoint
-	resp, err := http.Get(ts.httpServer.URL + "/health")
+	//nolint:noctx // Test doesn't need context
+	resp, err := http.Get(ts.httpServer.URL + "/health") // #nosec G107
 	require.NoError(t, err)
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }

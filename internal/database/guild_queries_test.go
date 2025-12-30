@@ -38,7 +38,6 @@ func assertGuildEqual(t *testing.T, expected, actual *models.Guild) {
 	assert.ElementsMatch(t, expected.Features, actual.Features)
 }
 
-
 // ============================================================================
 // Guild CRUD Tests
 // ============================================================================

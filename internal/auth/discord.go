@@ -344,7 +344,7 @@ func (dc *DiscordClient) makeAPIRequest(ctx context.Context, method, endpoint, a
 
 	// Handle rate limiting
 	if resp.StatusCode == http.StatusTooManyRequests {
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		if dc.rateLimiter != nil {
 			_ = dc.rateLimiter.HandleRateLimitResponse(endpoint, resp.Header)
 		}
@@ -360,7 +360,7 @@ func (dc *DiscordClient) GetUserGuilds(ctx context.Context, accessToken string) 
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -386,7 +386,7 @@ func (dc *DiscordClient) GetGuildChannels(ctx context.Context, accessToken, guil
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -427,7 +427,7 @@ func (dc *DiscordClient) GetChannelMessages(ctx context.Context, accessToken, ch
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)

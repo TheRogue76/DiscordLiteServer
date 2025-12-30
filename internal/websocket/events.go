@@ -1,3 +1,4 @@
+// Package websocket implements Discord Gateway WebSocket connection and event handling.
 package websocket
 
 import (
@@ -25,11 +26,11 @@ type DiscordMessage struct {
 		Discriminator string `json:"discriminator"`
 		Avatar        string `json:"avatar"`
 	} `json:"author"`
-	Content         string    `json:"content"`
-	Timestamp       string    `json:"timestamp"`
-	EditedTimestamp *string   `json:"edited_timestamp"`
-	Type            int       `json:"type"`
-	Attachments     []Attachment `json:"attachments"`
+	Content          string       `json:"content"`
+	Timestamp        string       `json:"timestamp"`
+	EditedTimestamp  *string      `json:"edited_timestamp"`
+	Type             int          `json:"type"`
+	Attachments      []Attachment `json:"attachments"`
 	MessageReference *struct {
 		MessageID string `json:"message_id"`
 	} `json:"message_reference"`
@@ -257,7 +258,7 @@ func HandleMessageDelete(ctx context.Context, manager *Manager, db *database.DB,
 		},
 		Content:   existingMsg.Content.String,
 		Timestamp: existingMsg.Timestamp.UnixMilli(),
-		Type:      messagev1.MessageType(existingMsg.MessageType),
+		Type:      messagev1.MessageType(existingMsg.MessageType), // #nosec G115 - message type enum
 	}
 
 	event := &messagev1.MessageEvent{
@@ -289,7 +290,7 @@ func convertToProtoMessage(discordMsg *DiscordMessage, dbMsg *models.Message) *m
 		},
 		Content:   discordMsg.Content,
 		Timestamp: dbMsg.Timestamp.UnixMilli(),
-		Type:      messagev1.MessageType(discordMsg.Type),
+		Type:      messagev1.MessageType(discordMsg.Type), // #nosec G115 - message type enum
 	}
 
 	// Add edited timestamp if present
@@ -311,16 +312,16 @@ func convertToProtoMessage(discordMsg *DiscordMessage, dbMsg *models.Message) *m
 			Filename:     att.Filename,
 			Url:          att.URL,
 			ProxyUrl:     att.ProxyURL,
-			SizeBytes:    int32(att.Size),
+			SizeBytes:    int32(att.Size), // #nosec G115 - file size
 			ContentType:  att.ContentType,
 		}
 
 		if att.Width != nil {
-			width := int32(*att.Width)
+			width := int32(*att.Width) // #nosec G115 - image width
 			protoAtt.Width = &width
 		}
 		if att.Height != nil {
-			height := int32(*att.Height)
+			height := int32(*att.Height) // #nosec G115 - image height
 			protoAtt.Height = &height
 		}
 

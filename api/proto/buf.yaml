@@ -4,7 +4,9 @@ modules:
     name: buf.build/parsascontentcorner/discordliteserver
 lint:
   use:
-    - DEFAULT
+    - STANDARD
+  except:
+    - RPC_RESPONSE_STANDARD_NAME  # Allow MessageEvent for streaming events
 breaking:
   use:
     - FILE

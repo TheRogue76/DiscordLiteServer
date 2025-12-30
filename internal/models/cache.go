@@ -8,6 +8,7 @@ import (
 // CacheType represents the type of cached data
 type CacheType string
 
+// Cache type constants for different entity types
 const (
 	CacheTypeGuild   CacheType = "guild"
 	CacheTypeChannel CacheType = "channel"
@@ -16,14 +17,14 @@ const (
 
 // CacheMetadata tracks cache TTL for Discord resources
 type CacheMetadata struct {
-	ID            int64        `json:"id"`
-	CacheType     CacheType    `json:"cache_type"`
-	EntityID      string       `json:"entity_id"`
+	ID            int64         `json:"id"`
+	CacheType     CacheType     `json:"cache_type"`
+	EntityID      string        `json:"entity_id"`
 	UserID        sql.NullInt64 `json:"user_id"`
-	LastFetchedAt time.Time    `json:"last_fetched_at"`
-	ExpiresAt     time.Time    `json:"expires_at"`
-	CreatedAt     time.Time    `json:"created_at"`
-	UpdatedAt     time.Time    `json:"updated_at"`
+	LastFetchedAt time.Time     `json:"last_fetched_at"`
+	ExpiresAt     time.Time     `json:"expires_at"`
+	CreatedAt     time.Time     `json:"created_at"`
+	UpdatedAt     time.Time     `json:"updated_at"`
 }
 
 // IsExpired checks if the cache entry has expired

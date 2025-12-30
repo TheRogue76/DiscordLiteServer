@@ -9,15 +9,15 @@ import (
 
 // Guild represents a Discord guild (server)
 type Guild struct {
-	ID             int64         `json:"id"`
-	DiscordGuildID string        `json:"discord_guild_id"`
-	Name           string        `json:"name"`
+	ID             int64          `json:"id"`
+	DiscordGuildID string         `json:"discord_guild_id"`
+	Name           string         `json:"name"`
 	Icon           sql.NullString `json:"icon"`
 	OwnerID        sql.NullString `json:"owner_id"`
-	Permissions    int64         `json:"permissions"`
+	Permissions    int64          `json:"permissions"`
 	Features       pq.StringArray `json:"features"`
-	CreatedAt      time.Time     `json:"created_at"`
-	UpdatedAt      time.Time     `json:"updated_at"`
+	CreatedAt      time.Time      `json:"created_at"`
+	UpdatedAt      time.Time      `json:"updated_at"`
 }
 
 // UserGuild represents a user's membership in a guild

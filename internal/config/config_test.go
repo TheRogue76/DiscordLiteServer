@@ -568,14 +568,14 @@ func TestCacheConfigCustomValues(t *testing.T) {
 	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	cleanup := setupTestEnv(t, map[string]string{
-		"DISCORD_CLIENT_ID":          "client_id",
-		"DISCORD_CLIENT_SECRET":      "secret",
-		"DISCORD_REDIRECT_URI":       "http://localhost:8080/callback",
-		"DB_PASSWORD":                "password",
-		"TOKEN_ENCRYPTION_KEY":       validKey,
-		"CACHE_GUILD_TTL_HOURS":      "2",
-		"CACHE_CHANNEL_TTL_MINUTES":  "60",
-		"CACHE_MESSAGE_TTL_MINUTES":  "10",
+		"DISCORD_CLIENT_ID":         "client_id",
+		"DISCORD_CLIENT_SECRET":     "secret",
+		"DISCORD_REDIRECT_URI":      "http://localhost:8080/callback",
+		"DB_PASSWORD":               "password",
+		"TOKEN_ENCRYPTION_KEY":      validKey,
+		"CACHE_GUILD_TTL_HOURS":     "2",
+		"CACHE_CHANNEL_TTL_MINUTES": "60",
+		"CACHE_MESSAGE_TTL_MINUTES": "10",
 	})
 	defer cleanup()
 
@@ -634,14 +634,14 @@ func TestValidateCacheTTL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			cleanup := setupTestEnv(t, map[string]string{
-				"DISCORD_CLIENT_ID":          "client_id",
-				"DISCORD_CLIENT_SECRET":      "secret",
-				"DISCORD_REDIRECT_URI":       "http://localhost:8080/callback",
-				"DB_PASSWORD":                "password",
-				"TOKEN_ENCRYPTION_KEY":       validKey,
-				"CACHE_GUILD_TTL_HOURS":      tt.guildTTL,
-				"CACHE_CHANNEL_TTL_MINUTES":  tt.channelTTL,
-				"CACHE_MESSAGE_TTL_MINUTES":  tt.messageTTL,
+				"DISCORD_CLIENT_ID":         "client_id",
+				"DISCORD_CLIENT_SECRET":     "secret",
+				"DISCORD_REDIRECT_URI":      "http://localhost:8080/callback",
+				"DB_PASSWORD":               "password",
+				"TOKEN_ENCRYPTION_KEY":      validKey,
+				"CACHE_GUILD_TTL_HOURS":     tt.guildTTL,
+				"CACHE_CHANNEL_TTL_MINUTES": tt.channelTTL,
+				"CACHE_MESSAGE_TTL_MINUTES": tt.messageTTL,
 			})
 			defer cleanup()
 
@@ -688,16 +688,16 @@ func TestWebSocketConfigCustomValues(t *testing.T) {
 	validKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 
 	cleanup := setupTestEnv(t, map[string]string{
-		"DISCORD_CLIENT_ID":                    "client_id",
-		"DISCORD_CLIENT_SECRET":                "secret",
-		"DISCORD_REDIRECT_URI":                 "http://localhost:8080/callback",
-		"DB_PASSWORD":                          "password",
-		"TOKEN_ENCRYPTION_KEY":                 validKey,
-		"WEBSOCKET_ENABLED":                    "false",
-		"WEBSOCKET_MAX_CONNECTIONS_PER_USER":   "10",
-		"WEBSOCKET_HEARTBEAT_INTERVAL":         "60",
-		"WEBSOCKET_RECONNECT_ATTEMPTS":         "5",
-		"WEBSOCKET_RECONNECT_DELAY":            "10",
+		"DISCORD_CLIENT_ID":                  "client_id",
+		"DISCORD_CLIENT_SECRET":              "secret",
+		"DISCORD_REDIRECT_URI":               "http://localhost:8080/callback",
+		"DB_PASSWORD":                        "password",
+		"TOKEN_ENCRYPTION_KEY":               validKey,
+		"WEBSOCKET_ENABLED":                  "false",
+		"WEBSOCKET_MAX_CONNECTIONS_PER_USER": "10",
+		"WEBSOCKET_HEARTBEAT_INTERVAL":       "60",
+		"WEBSOCKET_RECONNECT_ATTEMPTS":       "5",
+		"WEBSOCKET_RECONNECT_DELAY":          "10",
 	})
 	defer cleanup()
 
@@ -817,7 +817,7 @@ func TestWebSocketEnabledParsing(t *testing.T) {
 		{name: "true", value: "true", expected: true},
 		{name: "false", value: "false", expected: false},
 		{name: "TRUE", value: "TRUE", expected: false}, // case-sensitive
-		{name: "1", value: "1", expected: false},        // not "true"
+		{name: "1", value: "1", expected: false},       // not "true"
 		{name: "empty defaults to true", value: "", expected: true},
 	}
 

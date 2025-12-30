@@ -129,7 +129,7 @@ func (db *DB) GetChannelsByGuildID(ctx context.Context, guildID int64) ([]*model
 	if err != nil {
 		return nil, fmt.Errorf("failed to query channels: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var channels []*models.Channel
 	for rows.Next() {
@@ -175,7 +175,7 @@ func (db *DB) GetChannelsByDiscordGuildID(ctx context.Context, discordGuildID st
 	if err != nil {
 		return nil, fmt.Errorf("failed to query channels: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var channels []*models.Channel
 	for rows.Next() {

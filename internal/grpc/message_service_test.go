@@ -40,13 +40,13 @@ func (m *mockWebSocketManager) IsEnabled() bool {
 	return m.enabled
 }
 
-func (m *mockWebSocketManager) Subscribe(ctx context.Context, userID int64, channelIDs []string) (<-chan *messagev1.MessageEvent, error) {
+func (m *mockWebSocketManager) Subscribe(_ context.Context, _ int64, _ []string) (<-chan *messagev1.MessageEvent, error) {
 	// Return a channel that never sends anything
 	ch := make(chan *messagev1.MessageEvent)
 	return ch, nil
 }
 
-func (m *mockWebSocketManager) Unsubscribe(userID int64, channelIDs []string) {
+func (m *mockWebSocketManager) Unsubscribe(_ int64, _ []string) {
 	// No-op
 }
 
@@ -68,7 +68,7 @@ func setupMessageServiceTest(t *testing.T) *testMessageService {
 	require.NoError(t, err)
 
 	// Create mock Discord API server
-	mockDiscord := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockDiscord := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
 	}))
 
@@ -179,7 +179,7 @@ func (ts *testMessageService) setupMockMessagesResponse(channelID string, messag
 	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/channels/"+channelID+"/messages" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(messages)
+			_ = json.NewEncoder(w).Encode(messages)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -296,7 +296,7 @@ func TestGetMessages_Success_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup mock to fail (should NOT be called)
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		t.Error("Discord API should not be called when cache is valid")
 		w.WriteHeader(http.StatusInternalServerError)
 	})
@@ -578,9 +578,9 @@ func TestGetMessages_DiscordAPIError(t *testing.T) {
 	sessionID, _, channel := ts.createAuthenticatedSessionWithChannel(ctx, t)
 
 	// Setup mock to return error
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Internal Server Error"}`))
+		_, _ = w.Write([]byte(`{"message": "Internal Server Error"}`))
 	})
 
 	// Call GetMessages

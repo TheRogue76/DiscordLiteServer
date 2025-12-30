@@ -44,7 +44,7 @@ func setupChannelServiceTest(t *testing.T) *testChannelService {
 	require.NoError(t, err)
 
 	// Create mock Discord API server
-	mockDiscord := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	mockDiscord := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		// Default handler - can be overridden in tests
 		w.WriteHeader(http.StatusNotFound)
 	}))
@@ -130,7 +130,7 @@ func (ts *testChannelService) setupMockGuildsResponse(guilds []*auth.DiscordGuil
 	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/users/@me/guilds" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(guilds)
+			_ = json.NewEncoder(w).Encode(guilds)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -141,7 +141,7 @@ func (ts *testChannelService) setupMockChannelsResponse(guildID string, channels
 	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path == "/guilds/"+guildID+"/channels" && r.Method == "GET" {
 			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(channels)
+			_ = json.NewEncoder(w).Encode(channels)
 			return
 		}
 		w.WriteHeader(http.StatusNotFound)
@@ -228,7 +228,7 @@ func TestGetGuilds_Success_CacheHit(t *testing.T) {
 
 	// Setup mock to return error (should NOT be called)
 	ts.setupMockGuildsResponse(nil)
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		t.Error("Discord API should not be called when cache is valid")
 		w.WriteHeader(http.StatusInternalServerError)
 	})
@@ -353,9 +353,9 @@ func TestGetGuilds_DiscordAPIError(t *testing.T) {
 	sessionID, _ := ts.createAuthenticatedSession(ctx, t)
 
 	// Setup mock to return error
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
-		w.Write([]byte(`{"message": "Internal Server Error"}`))
+		_, _ = w.Write([]byte(`{"message": "Internal Server Error"}`))
 	})
 
 	// Call GetGuilds
@@ -472,7 +472,7 @@ func TestGetChannels_Success_CacheHit(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup mock to fail (should NOT be called)
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		t.Error("Discord API should not be called when cache is valid")
 		w.WriteHeader(http.StatusInternalServerError)
 	})
@@ -604,9 +604,9 @@ func TestGetChannels_DiscordAPIError(t *testing.T) {
 	require.NoError(t, err)
 
 	// Setup mock to return error
-	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	ts.mockDiscord.Config.Handler = http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusForbidden)
-		w.Write([]byte(`{"message": "Missing Access"}`))
+		_, _ = w.Write([]byte(`{"message": "Missing Access"}`))
 	})
 
 	// Call GetChannels

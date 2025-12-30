@@ -60,7 +60,7 @@ func TestPhase2_GetGuilds_FullFlow(t *testing.T) {
 			w.Header().Set("X-RateLimit-Limit", "50")
 			w.Header().Set("X-RateLimit-Remaining", "49")
 			w.Header().Set("X-RateLimit-Reset", time.Now().Add(5*time.Minute).Format(time.RFC3339))
-			json.NewEncoder(w).Encode(guildsResponse)
+			_ = json.NewEncoder(w).Encode(guildsResponse)
 			return
 		}
 		http.NotFound(w, r)
@@ -148,7 +148,7 @@ func TestPhase2_GetChannels_FullFlow(t *testing.T) {
 			w.Header().Set("X-RateLimit-Limit", "50")
 			w.Header().Set("X-RateLimit-Remaining", "49")
 			w.Header().Set("X-RateLimit-Reset", time.Now().Add(5*time.Minute).Format(time.RFC3339))
-			json.NewEncoder(w).Encode(channelsResponse)
+			_ = json.NewEncoder(w).Encode(channelsResponse)
 			return
 		}
 		http.NotFound(w, r)
@@ -254,9 +254,9 @@ func TestPhase2_GetMessages_WithPagination(t *testing.T) {
 			// Pagination: check for before parameter
 			beforeID := r.URL.Query().Get("before")
 			if beforeID == "" {
-				json.NewEncoder(w).Encode(messagesPage1)
+				_ = json.NewEncoder(w).Encode(messagesPage1)
 			} else {
-				json.NewEncoder(w).Encode(messagesPage2)
+				_ = json.NewEncoder(w).Encode(messagesPage2)
 			}
 			return
 		}

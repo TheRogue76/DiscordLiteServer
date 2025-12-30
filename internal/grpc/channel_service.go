@@ -294,8 +294,8 @@ func convertChannelsToProto(channels []*models.Channel) []*channelv1.Channel {
 			DiscordChannelId: c.DiscordChannelID,
 			GuildId:          fmt.Sprintf("%d", c.GuildID), // This should be Discord guild ID, not internal ID
 			Name:             c.Name,
-			Type:             channelv1.ChannelType(c.Type),
-			Position:         int32(c.Position),
+			Type:             channelv1.ChannelType(int32(c.Type)), // #nosec G115 - Discord channel types are small values (0-15)
+			Position:         int32(c.Position),                    // #nosec G115 - position is small
 			ParentId:         c.ParentID.String,
 			Topic:            c.Topic.String,
 			Nsfw:             c.NSFW,

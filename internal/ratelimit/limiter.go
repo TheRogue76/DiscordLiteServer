@@ -1,3 +1,4 @@
+// Package ratelimit implements Discord API rate limiting based on response headers.
 package ratelimit
 
 import (

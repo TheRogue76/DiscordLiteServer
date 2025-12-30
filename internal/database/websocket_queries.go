@@ -131,7 +131,7 @@ func (db *DB) GetWebSocketSessionsByUserID(ctx context.Context, userID int64) ([
 	if err != nil {
 		return nil, fmt.Errorf("failed to query WebSocket sessions: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var sessions []*models.WebSocketSession
 	for rows.Next() {
@@ -272,7 +272,7 @@ func (db *DB) GetActiveWebSocketSessions(ctx context.Context) ([]*models.WebSock
 	if err != nil {
 		return nil, fmt.Errorf("failed to query active WebSocket sessions: %w", err)
 	}
-	defer rows.Close()
+	defer func() { _ = rows.Close() }()
 
 	var sessions []*models.WebSocketSession
 	for rows.Next() {
