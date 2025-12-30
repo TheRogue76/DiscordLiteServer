@@ -630,12 +630,12 @@ For issues and questions:
 - ✅ Docker support
 
 ### Phase 2 (Planned)
-- [ ] Get user's Discord guilds/servers
-- [ ] Get guild channels
-- [ ] Get channel messages
-- [ ] Real-time updates (WebSocket)
-- [ ] Redis caching layer
-- [ ] Rate limiting
+- ✅ Get user's Discord guilds/servers
+- ✅ Get guild channels
+- ✅ Get channel messages
+- ✅ Real-time updates (WebSocket)
+- [ ] Redis caching layer (We will see if it ends up being needed)
+- ✅ Rate limiting
 
 ### Future
 - [ ] Message sending
