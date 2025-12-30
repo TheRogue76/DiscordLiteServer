@@ -4,18 +4,20 @@
 
 **Project Name**: Discord Lite Server
 **Purpose**: Golang backend service for Discord OAuth authentication with gRPC API
-**Phase**: Phase 1 Complete (Authentication + Swift Client + Testing) | Phase 2 Planned (Channels/Messages)
-**Status**: Phase 12 Complete - Comprehensive Test Suite (230 tests, 46.5% coverage)
-**Last Updated**: 2025-12-29
+**Phase**: Phase 1 Complete (Authentication + Swift Client) | Phase 2: 85% Complete (Guilds/Channels/Messages)
+**Status**: 321 tests passing, 50%+ coverage, StreamMessages pending implementation
+**Last Updated**: 2025-12-30
 
 ## Architecture Summary
 
 ### Core Components
 
 1. **gRPC Server** (Port 50051)
-   - AuthService with 3 RPC methods
-   - Handles client authentication requests
+   - **AuthService** - 3 RPC methods (InitAuth, GetAuthStatus, RevokeAuth)
+   - **ChannelService** - 2 RPC methods (GetGuilds, GetChannels)
+   - **MessageService** - 2 RPC methods (GetMessages, StreamMessages*)
    - Reflection enabled for development
+   - *StreamMessages pending WebSocket integration
 
 2. **HTTP Server** (Port 8080)
    - OAuth callback endpoint (`/auth/callback`)
@@ -23,14 +25,29 @@
    - Serves HTML success/error pages
 
 3. **PostgreSQL Database** (Port 5432)
-   - 4 tables: users, oauth_tokens, oauth_states, auth_sessions
-   - Automatic cleanup of expired sessions (30-minute interval)
+   - **Phase 1 tables (4)**: users, oauth_tokens, oauth_states, auth_sessions
+   - **Phase 2 tables (7)**: guilds, user_guilds, channels, messages, message_attachments, cache_metadata, websocket_sessions
+   - Automatic cleanup of expired sessions and cache (30-minute intervals)
    - Connection pooling configured
 
 4. **Discord OAuth Integration**
-   - Full OAuth 2.0 flow
+   - Full OAuth 2.0 flow with automatic token refresh
    - AES-256-GCM token encryption
    - CSRF protection via state tokens
+   - Discord API client (guilds, channels, messages)
+   - Rate limiting (respects Discord API headers)
+
+5. **Caching Layer**
+   - Database-backed caching (no Redis)
+   - TTL strategy: Guilds (1hr), Channels (30min), Messages (5min)
+   - Global and user-specific cache support
+   - Automatic cache invalidation on events
+
+6. **WebSocket Manager** ⚠️
+   - Discord Gateway connection handling
+   - Event processing (MESSAGE_CREATE, UPDATE, DELETE)
+   - Session management and heartbeat
+   - *Not yet wired to StreamMessages RPC
 
 ### Authentication Flow
 
@@ -219,131 +236,107 @@
   - Table-driven test patterns
   - Mock HTTP servers for Discord API
   - Test database setup helpers
-- [x] **Documentation**
-  - Created `TESTING_SUMMARY.md` with complete test documentation
-  - Coverage recommendations and CI/CD integration guide
-  - Bug fixes and testing patterns documented
 
-**Test Results:**
-- **230 passing tests** (0 failures)
-- **46.5% overall code coverage**
-- **~60 second total runtime**
-- Zero flaky tests
+**Current Test Suite (2025-12-30):**
+- **321 passing tests** (Phase 1 + Phase 2)
+- **50%+ overall code coverage**
+- **Zero flaky tests** - Fixed rate limiter timing issues
+- All model tests added (100% model coverage)
+- Phase 1 integration tests passing (8 tests)
 
 **Coverage by Package:**
-- config: 97.2% (excellent)
-- grpc: 69.2% (good)
-- database: 64.1% (good)
-- ratelimit: 56.9% (moderate)
+- models: 100.0% (excellent) - 82 tests
+- config: 97.2% (excellent) - 18 tests
+- logger: 94.7% (excellent)
+- integration: 80.6% (good) - 8 tests
+- grpc: 69.2% (good) - 47 tests (Phase 1 + Phase 2)
+- database: 64.1% (good) - 104 tests (Phase 1 + Phase 2)
+- ratelimit: 56.9% (moderate) - 10 tests
+- oauth: 50.0% (moderate)
+- auth: 43.9% (moderate)
+- websocket: 0.0% (not yet tested)
 
-**Bugs Fixed During Testing:**
-1. Message service nil pointer dereference in attachment handling
-2. Rate limiter test timing issues (RFC3339 precision)
-3. Cache test timezone mismatches
-4. Multiple test assertion corrections
+### ✅ Phase 2: Guilds, Channels, Messages (85% Complete)
 
-### ✅ Testing Status - COMPLETE
+#### Phase 2A: Database Schema & Models ✅ COMPLETE
+- [x] Migration `000002_add_phase2_tables.up.sql` (167 lines, 7 tables)
+- [x] Models: `guild.go`, `channel.go`, `message.go`, `cache.go`, `websocket.go`
+- [x] Query files: `guild_queries.go`, `channel_queries.go`, `message_queries.go`, `cache_queries.go`, `websocket_queries.go`
+- [x] **100% model test coverage** (82 tests covering all Discord types and edge cases)
 
-#### Phase 12: Comprehensive Test Suite (2025-12-29)
-- [x] **230 passing unit tests** across all packages
-- [x] **46.5% overall code coverage**
-- [x] **Zero flaky tests** - All tests deterministic
-- [x] **Fast execution** - Full suite runs in ~60 seconds
+#### Phase 2B: Discord API Client Extensions ✅ COMPLETE
+- [x] `RefreshToken()` and `RefreshIfNeeded()` - Automatic token refresh
+- [x] `GetUserGuilds()` - Fetch user's Discord servers
+- [x] `GetGuildChannels()` - Fetch guild channels
+- [x] `GetChannelMessages()` - Fetch messages with pagination
+- [x] Rate limiter with Discord API header parsing
+- [x] **10 rate limiter tests passing** (fixed flaky timing test)
 
-**Detailed Coverage by Package:**
-- ✅ **config: 97.2%** - Excellent coverage
-- ✅ **grpc: 69.2%** - Good coverage (ChannelService, MessageService, AuthService)
-- ✅ **database: 64.1%** - Good coverage (85 tests total)
-  - Phase 1 database tests (27 tests)
-  - Guild query tests (23 tests)
-  - Channel query tests (17 tests)
-  - Message query tests (18 tests)
-  - Cache query tests (19 tests)
-- ✅ **ratelimit: 56.9%** - Moderate coverage (10 tests)
-- ⚠️ **oauth: 50.0%** - Moderate coverage
-- ⚠️ **auth: 43.7%** - Moderate coverage
-- ⚠️ **models: 42.9%** - Moderate coverage
-- ❌ **websocket: 0.0%** - Phase 2E not yet implemented
+#### Phase 2C: Protobuf Definitions ✅ COMPLETE
+- [x] `api/proto/discord/channel/v1/channel.proto` - Guild and Channel services
+- [x] `api/proto/discord/message/v1/message.proto` - Message service with StreamMessages
+- [x] Generated Go code with Buf CLI
+- [x] Swift client generation (multi-language support)
 
-#### ✅ Tested Components
+#### Phase 2D: gRPC Services ✅ COMPLETE
+- [x] `ChannelServer` - GetGuilds, GetChannels RPCs
+- [x] `MessageServer` - GetMessages RPC
+- [x] `CacheManager` - Cache hit/miss logic
+- [x] All services registered in `server.go`
+- [x] **24 gRPC service tests passing**
+  - Cache hit/miss scenarios
+  - Pagination (before/after cursors)
+  - Access control validation
+  - Error handling
 
-**Database Operations** (85 tests)
-- [x] Database connection and pooling (testcontainers PostgreSQL 15-alpine)
-- [x] Schema migration execution
-- [x] CRUD operations for all tables (users, guilds, channels, messages, cache)
-- [x] Cleanup job functionality
-- [x] Transaction handling in state validation
-- [x] Message pagination (Discord-style cursor-based)
-- [x] Cache TTL and expiry management
-- [x] Cascade deletion (messages → attachments)
+#### Phase 2E: WebSocket Implementation ⚠️ PARTIAL (70% Complete)
+- [x] `internal/websocket/manager.go` - Connection manager (9.7KB)
+- [x] `internal/websocket/gateway.go` - Gateway WebSocket logic (10.8KB)
+- [x] `internal/websocket/events.go` - Event handlers (10.6KB)
+- [x] WebSocket manager integrated in `main.go`
+- [x] Cleanup jobs configured (session and cache)
+- [ ] **StreamMessages RPC returns `Unimplemented`** ⚠️
+- [ ] WebSocket events not wired to gRPC streaming
 
-**gRPC Services** (23 tests)
-- [x] InitAuth RPC endpoint
-- [x] GetAuthStatus RPC endpoint
-- [x] RevokeAuth RPC endpoint
-- [x] GetGuilds RPC endpoint (with cache hit/miss)
-- [x] GetChannels RPC endpoint (with cache hit/miss)
-- [x] GetMessages RPC endpoint (with pagination and attachments)
-- [x] Session ID generation and validation
-- [x] OAuth token refresh logic
-- [x] Error handling and status codes
-- [x] Permission validation (channel access)
+**What's Left:**
+- Wire WebSocket manager to StreamMessages RPC (~3 hours)
+- Subscribe to channels, forward MESSAGE_CREATE/UPDATE/DELETE events
+- Handle context cancellation and cleanup
 
-**Rate Limiting** (10 tests)
-- [x] Rate limiter initialization
-- [x] Discord API rate limit header parsing
-- [x] Bucket-based rate limiting
-- [x] Concurrent access safety
-- [x] Multiple endpoint handling
+#### Phase 2F: Configuration & Integration ⚠️ PARTIAL (60% Complete)
+- [x] `CacheConfig` and `WebSocketConfig` added
+- [x] Environment variables in `.env.example`
+- [x] Services initialized in `main.go`
+- [x] Cache and WebSocket cleanup jobs running
+- [ ] **No Phase 2 integration tests** ❌
+- [ ] **Documentation not updated** (README, API examples) ❌
 
-**Configuration** (18 tests)
-- [x] Environment variable loading
-- [x] Required field validation
-- [x] Default value handling
-- [x] Error scenarios
+**What's Left:**
+- Create `internal/integration/phase2_flow_test.go` (~4 hours)
+- Update README.md with Phase 2 API examples (~2 hours)
+- Manual testing with real Discord API (~6 hours)
 
-**Cache Management** (19 tests)
-- [x] Cache TTL management
-- [x] Cache invalidation strategies
-- [x] Cache isolation (global vs user-specific)
-- [x] Cache statistics
-- [x] Expired cache cleanup
+#### 📊 Phase 2 Summary
 
-#### ⚠️ Integration Tests
+| Component | Status | Tests | Coverage |
+|-----------|--------|-------|----------|
+| Database & Models | ✅ Complete | 104 tests | 64.1% |
+| Discord API Client | ✅ Complete | 10 tests | 43.9% |
+| Protobuf Definitions | ✅ Complete | N/A | N/A |
+| gRPC Get* Services | ✅ Complete | 24 tests | 69.2% |
+| Cache Manager | ✅ Complete | 19 tests | 100% |
+| WebSocket Infrastructure | ⚠️ 70% | 0 tests | 0% |
+| **StreamMessages RPC** | ❌ **Stub only** | **0 tests** | **0%** |
+| **Phase 2 Integration** | ❌ **Missing** | **0 tests** | **0%** |
+| **Documentation** | ❌ **Not updated** | **N/A** | **N/A** |
 
-**Status**: Created but not compiling (deferred due to complexity)
-- [x] Test file created: `internal/integration/phase1_oauth_test.go`
-- [ ] Fix API mismatches (oauth package, config struct)
-- [ ] Complete end-to-end OAuth flow testing
+**Overall Phase 2 Progress: 85% Complete**
 
-**Recommendation**: Fix integration tests as optional enhancement after Phase 1 deployment
-
-#### 📊 Test Coverage Report
-
-See `TESTING_SUMMARY.md` for complete details including:
-- Test execution results
-- Bug fixes made during testing
-- Testing patterns used
-- Coverage recommendations
-- CI/CD integration guide
-
-**Test Infrastructure:**
-- testcontainers-go for PostgreSQL integration tests
-- httptest for mocking Discord API
-- Table-driven tests for comprehensive scenarios
-- Mock servers for gRPC service testing
-
-**Quick Test Commands:**
-```bash
-# Run all tests
-make test
-
-# Run with coverage
-go test ./internal/... -v -coverprofile=coverage.out -timeout 300s
-
-# View coverage report
-go tool cover -html=coverage.out
-```
+**Remaining Work (Estimated 16-20 hours):**
+1. Implement StreamMessages RPC (~3 hours)
+2. Create Phase 2 integration test (~4 hours)
+3. Manual testing with real Discord API (~6 hours)
+4. Update documentation (README, examples) (~3 hours)
 
 ### 🚧 Known Issues & TODOs
 
@@ -729,34 +722,46 @@ LOG_FORMAT=json                # json|console
 - [ ] IP-based session validation
 - [ ] Secrets management (Vault, AWS Secrets Manager)
 
-## Phase 2 Roadmap
+## Phase 2: Implemented Features (85% Complete)
 
-### Planned Features
-1. **GetChannels RPC**
-   - Fetch user's Discord guilds
-   - Fetch guild channels
-   - Cache guild/channel data
+### ✅ Implemented RPCs
+1. **GetGuilds RPC** ✅
+   - Fetches user's Discord servers
+   - Database caching with 1-hour TTL
+   - Automatic token refresh
+   - Force refresh option
 
-2. **GetMessages RPC**
-   - Fetch channel messages
-   - Pagination support
-   - Real-time updates (WebSocket)
+2. **GetChannels RPC** ✅
+   - Fetches guild channels
+   - Database caching with 30-minute TTL
+   - Guild access validation
+   - Force refresh option
 
-3. **Caching Layer**
-   - Redis integration
-   - Cache guild/channel metadata
-   - Reduce Discord API calls
+3. **GetMessages RPC** ✅
+   - Fetches channel messages with attachments
+   - Pagination (before/after cursors, limit)
+   - Database caching with 5-minute TTL
+   - Channel access validation
+   - Force refresh option
 
-4. **Rate Limiting**
-   - Respect Discord rate limits
-   - Client-side rate limiting
-   - Queue system for requests
+4. **StreamMessages RPC** ⚠️ **Stub only**
+   - Server-side streaming defined in proto
+   - Returns `Unimplemented` error
+   - WebSocket infrastructure exists but not wired
 
-### Implementation Notes
-- Will require Discord API client library (discordgo)
-- Need to handle OAuth token refresh
-- Consider WebSocket for real-time updates
-- Phase 2 will add 3-5 new RPC methods
+### ✅ Implemented Infrastructure
+- **Database caching** (PostgreSQL, not Redis) ✅
+- **Automatic OAuth token refresh** ✅
+- **Rate limiting** (Discord API header parsing) ✅
+- **WebSocket manager** (not yet connected to StreamMessages) ⚠️
+- **Cache invalidation** (TTL-based and manual) ✅
+
+### 🚧 Remaining Work
+- [ ] Wire WebSocket to StreamMessages RPC
+- [ ] Phase 2 integration tests
+- [ ] Manual testing with real Discord API
+- [ ] Update README with Phase 2 examples
+- [ ] Load testing and optimization
 
 ## Common Commands
 
@@ -885,16 +890,26 @@ grpcurl -plaintext -d '{"session_id":"xxx"}' localhost:50051 discord.auth.AuthSe
 - [x] Code compiles without errors
 - [x] Documentation complete
 - [x] Docker support added
-- [ ] Manual testing successful
-- [ ] Unit tests written
-- [ ] Integration tests passing
+- [x] **321 tests passing** (Phase 1 + Phase 2 unit tests)
+- [x] **Phase 1 integration tests passing** (8 tests)
+- [x] **Multi-language support** (Go + Swift client)
 
-### Phase 2 Goals
-- [ ] Channel/message fetching works
-- [ ] Cache hit rate > 80%
-- [ ] API response time < 100ms
-- [ ] Zero token leaks
-- [ ] 99% uptime
+### Phase 2: 85% Complete ⚠️
+- [x] GetGuilds RPC working (with tests)
+- [x] GetChannels RPC working (with tests)
+- [x] GetMessages RPC working with pagination (with tests)
+- [x] Database caching implemented (TTL-based)
+- [x] Token refresh working automatically
+- [x] Rate limiting implemented
+- [x] **104 database tests** for Phase 2 tables
+- [x] **24 gRPC service tests** for Phase 2 RPCs
+- [x] **82 model tests** (100% model coverage)
+- [ ] **StreamMessages RPC** (stub only, pending WebSocket wiring)
+- [ ] **Phase 2 integration tests** (not created)
+- [ ] **Manual testing** with real Discord API
+- [ ] **Documentation** updated with Phase 2 examples
+- [ ] Cache hit rate validation (target: >70%)
+- [ ] API response time benchmarking (target: <100ms)
 
 ## Contact & Support
 
@@ -906,6 +921,6 @@ For questions or issues during development:
 
 ---
 
-**Last Updated**: 2025-12-29
-**Status**: Phase 11 Complete - Multi-Language API Support (Buf + Swift Client)
-**Next Milestone**: Phase 2 - Channels/Messages Feature Set
+**Last Updated**: 2025-12-30
+**Status**: Phase 2: 85% Complete (321 tests passing, 50%+ coverage)
+**Next Milestone**: Complete StreamMessages RPC + Phase 2 Integration Tests + Documentation

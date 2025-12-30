@@ -16,6 +16,14 @@ import (
 	"github.com/parsascontentcorner/discordliteserver/internal/models"
 )
 
+// WebSocketManager is an interface for WebSocket functionality
+// This avoids import cycles with the websocket package
+type WebSocketManager interface {
+	IsEnabled() bool
+	Subscribe(ctx context.Context, userID int64, channelIDs []string) (<-chan *messagev1.MessageEvent, error)
+	Unsubscribe(userID int64, channelIDs []string)
+}
+
 // MessageServer implements the MessageService gRPC server
 type MessageServer struct {
 	messagev1.UnimplementedMessageServiceServer
@@ -23,11 +31,11 @@ type MessageServer struct {
 	discordClient *auth.DiscordClient
 	logger        *zap.Logger
 	cacheManager  *CacheManager
-	wsManager     interface{} // Using interface{} to avoid import cycle with websocket package
+	wsManager     WebSocketManager
 }
 
 // NewMessageServer creates a new message service server
-func NewMessageServer(db *database.DB, discordClient *auth.DiscordClient, logger *zap.Logger, cacheManager *CacheManager, wsManager interface{}) *MessageServer {
+func NewMessageServer(db *database.DB, discordClient *auth.DiscordClient, logger *zap.Logger, cacheManager *CacheManager, wsManager WebSocketManager) *MessageServer {
 	return &MessageServer{
 		db:            db,
 		discordClient: discordClient,
@@ -236,45 +244,119 @@ func (s *MessageServer) GetMessages(ctx context.Context, req *messagev1.GetMessa
 // StreamMessages streams real-time message events for subscribed channels
 // This is a server-side streaming RPC that will be fully implemented in Phase 2E
 func (s *MessageServer) StreamMessages(req *messagev1.StreamMessagesRequest, stream messagev1.MessageService_StreamMessagesServer) error {
-	s.logger.Debug("StreamMessages called",
+	// Check if WebSocket is enabled first (before accessing stream)
+	if !s.wsManager.IsEnabled() {
+		s.logger.Warn("StreamMessages called but WebSocket is disabled")
+		return status.Errorf(codes.Unavailable, "WebSocket support is not enabled on this server")
+	}
+
+	s.logger.Info("StreamMessages called",
 		zap.String("session_id", req.SessionId),
 		zap.Strings("channel_ids", req.ChannelIds),
 	)
 
-	// TODO: Phase 2E - Implement WebSocket integration
-	// This is a placeholder that returns an error indicating it's not yet implemented
-
-	return status.Errorf(codes.Unimplemented, "StreamMessages will be implemented in Phase 2E with WebSocket support")
-
-	/* Phase 2E implementation will look like:
-	1. Validate session
-	2. Verify user has access to all requested channels
-	3. Subscribe to WebSocket manager for these channels
-	4. Stream MessageEvent as they arrive
-	5. Handle context cancellation for cleanup
-
 	ctx := stream.Context()
-	userID := ... // from session
 
-	// Subscribe to channels
+	// Validate session
+	if req.SessionId == "" {
+		return status.Errorf(codes.InvalidArgument, "session_id is required")
+	}
+
+	if len(req.ChannelIds) == 0 {
+		return status.Errorf(codes.InvalidArgument, "at least one channel_id is required")
+	}
+
+	// Get auth session
+	session, err := s.db.GetAuthSession(ctx, req.SessionId)
+	if err != nil {
+		s.logger.Error("failed to get auth session", zap.Error(err))
+		return status.Errorf(codes.Unauthenticated, "invalid session")
+	}
+
+	if !session.UserID.Valid {
+		return status.Errorf(codes.Unauthenticated, "session not authenticated")
+	}
+
+	userID := session.UserID.Int64
+
+	// Verify user has access to all requested channels
+	for _, channelID := range req.ChannelIds {
+		hasAccess, err := s.db.UserHasChannelAccess(ctx, userID, channelID)
+		if err != nil {
+			s.logger.Error("failed to check channel access",
+				zap.Error(err),
+				zap.Int64("user_id", userID),
+				zap.String("channel_id", channelID),
+			)
+			return status.Errorf(codes.Internal, "failed to verify channel access")
+		}
+
+		if !hasAccess {
+			return status.Errorf(codes.PermissionDenied, "no access to channel: %s", channelID)
+		}
+	}
+
+	// Subscribe to channels via WebSocket manager
 	eventChan, err := s.wsManager.Subscribe(ctx, userID, req.ChannelIds)
 	if err != nil {
-		return status.Errorf(codes.Internal, "failed to subscribe to channels")
+		s.logger.Error("failed to subscribe to channels",
+			zap.Error(err),
+			zap.Int64("user_id", userID),
+			zap.Strings("channel_ids", req.ChannelIds),
+		)
+		return status.Errorf(codes.Internal, "failed to subscribe to message events: %v", err)
 	}
-	defer s.wsManager.Unsubscribe(userID, req.ChannelIds)
 
-	// Stream events
+	s.logger.Info("user subscribed to channels",
+		zap.Int64("user_id", userID),
+		zap.Strings("channel_ids", req.ChannelIds),
+	)
+
+	// Ensure cleanup on exit
+	defer func() {
+		s.wsManager.Unsubscribe(userID, req.ChannelIds)
+		s.logger.Info("user unsubscribed from channels",
+			zap.Int64("user_id", userID),
+			zap.Strings("channel_ids", req.ChannelIds),
+		)
+	}()
+
+	// Stream events to client
 	for {
 		select {
 		case <-ctx.Done():
-			return ctx.Err()
-		case event := <-eventChan:
-			if err := stream.Send(event); err != nil {
-				return err
+			// Client disconnected or context cancelled
+			s.logger.Info("stream context done",
+				zap.Int64("user_id", userID),
+				zap.Error(ctx.Err()),
+			)
+			return status.Errorf(codes.Canceled, "stream cancelled: %v", ctx.Err())
+
+		case event, ok := <-eventChan:
+			if !ok {
+				// Channel closed, subscription ended
+				s.logger.Warn("event channel closed",
+					zap.Int64("user_id", userID),
+				)
+				return status.Errorf(codes.Aborted, "event stream closed")
 			}
+
+			// Send event to client
+			if err := stream.Send(event); err != nil {
+				s.logger.Error("failed to send event to client",
+					zap.Error(err),
+					zap.Int64("user_id", userID),
+				)
+				return status.Errorf(codes.Internal, "failed to send event: %v", err)
+			}
+
+			s.logger.Debug("sent event to client",
+				zap.Int64("user_id", userID),
+				zap.String("event_type", event.EventType.String()),
+				zap.String("message_id", event.Message.DiscordMessageId),
+			)
 		}
 	}
-	*/
 }
 
 // Helper functions

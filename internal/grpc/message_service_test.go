@@ -31,6 +31,25 @@ func intPtr(i int) *int {
 	return &i
 }
 
+// mockWebSocketManager is a mock implementation of WebSocketManager for testing
+type mockWebSocketManager struct {
+	enabled bool
+}
+
+func (m *mockWebSocketManager) IsEnabled() bool {
+	return m.enabled
+}
+
+func (m *mockWebSocketManager) Subscribe(ctx context.Context, userID int64, channelIDs []string) (<-chan *messagev1.MessageEvent, error) {
+	// Return a channel that never sends anything
+	ch := make(chan *messagev1.MessageEvent)
+	return ch, nil
+}
+
+func (m *mockWebSocketManager) Unsubscribe(userID int64, channelIDs []string) {
+	// No-op
+}
+
 type testMessageService struct {
 	db            *database.DB
 	cleanup       func()
@@ -73,8 +92,11 @@ func setupMessageServiceTest(t *testing.T) *testMessageService {
 	// Create cache manager
 	cacheManager := NewCacheManager(db, logger)
 
+	// Create mock WebSocket manager
+	mockWSManager := &mockWebSocketManager{enabled: false}
+
 	// Create message server
-	server := NewMessageServer(db, discordClient, logger, cacheManager, nil)
+	server := NewMessageServer(db, discordClient, logger, cacheManager, mockWSManager)
 
 	return &testMessageService{
 		db:            db,
@@ -616,12 +638,12 @@ func TestGetMessages_HasMoreFlag(t *testing.T) {
 // StreamMessages Tests
 // ============================================================================
 
-func TestStreamMessages_Unimplemented(t *testing.T) {
+func TestStreamMessages_WebSocketDisabled(t *testing.T) {
 	ts := setupMessageServiceTest(t)
 	defer ts.cleanup()
 
-	// Create a mock stream (this is tricky without actual gRPC infrastructure)
-	// For now, we'll just verify the method returns Unimplemented
+	// WebSocket is disabled in test setup (wsManager returns nil from IsEnabled)
+	// Verify that StreamMessages returns Unavailable error
 
 	err := ts.server.StreamMessages(
 		&messagev1.StreamMessagesRequest{
@@ -635,6 +657,6 @@ func TestStreamMessages_Unimplemented(t *testing.T) {
 	require.Error(t, err)
 	st, ok := status.FromError(err)
 	require.True(t, ok)
-	assert.Equal(t, codes.Unimplemented, st.Code())
-	assert.Contains(t, st.Message(), "Phase 2E")
+	assert.Equal(t, codes.Unavailable, st.Code())
+	assert.Contains(t, st.Message(), "WebSocket support is not enabled")
 }
