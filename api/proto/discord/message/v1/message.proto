@@ -1,0 +1,114 @@
+syntax = "proto3";
+
+package discord.message.v1;
+
+option go_package = "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/message/v1;messagev1";
+
+// MessageService provides methods for fetching and streaming Discord messages
+service MessageService {
+  // GetMessages returns messages from a channel with pagination support
+  rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+
+  // StreamMessages streams real-time message events for subscribed channels
+  rpc StreamMessages(StreamMessagesRequest) returns (stream MessageEvent);
+}
+
+// GetMessagesRequest requests messages from a channel
+message GetMessagesRequest {
+  string session_id = 1;      // Auth session ID
+  string channel_id = 2;      // Discord channel ID
+  int32 limit = 3;            // Number of messages to fetch (1-100, default 50)
+  string before = 4;          // Get messages before this message ID (pagination)
+  string after = 5;           // Get messages after this message ID (pagination)
+  bool force_refresh = 6;     // If true, bypass cache and fetch from Discord API
+}
+
+// GetMessagesResponse contains messages and pagination info
+message GetMessagesResponse {
+  repeated Message messages = 1;
+  bool from_cache = 2;        // True if data was served from cache
+  bool has_more = 3;          // True if more messages are available
+}
+
+// StreamMessagesRequest initiates a message stream for channels
+message StreamMessagesRequest {
+  string session_id = 1;      // Auth session ID
+  repeated string channel_ids = 2; // List of channel IDs to subscribe to
+}
+
+// MessageEvent represents a real-time message event
+message MessageEvent {
+  MessageEventType event_type = 1;
+  Message message = 2;
+  int64 timestamp = 3;        // Unix timestamp in milliseconds
+}
+
+// MessageEventType represents the type of message event
+enum MessageEventType {
+  MESSAGE_EVENT_TYPE_UNSPECIFIED = 0;
+  MESSAGE_EVENT_TYPE_CREATE = 1;   // New message created
+  MESSAGE_EVENT_TYPE_UPDATE = 2;   // Message edited
+  MESSAGE_EVENT_TYPE_DELETE = 3;   // Message deleted
+}
+
+// Message represents a Discord message
+message Message {
+  string discord_message_id = 1;
+  string channel_id = 2;
+  MessageAuthor author = 3;
+  string content = 4;
+  int64 timestamp = 5;        // Unix timestamp in milliseconds
+  optional int64 edited_timestamp = 6; // Unix timestamp in milliseconds
+  MessageType type = 7;
+  optional string referenced_message_id = 8;
+  repeated MessageAttachment attachments = 9;
+}
+
+// MessageAuthor represents the author of a message
+message MessageAuthor {
+  string discord_id = 1;
+  string username = 2;
+  string discriminator = 3;
+  string avatar = 4;
+}
+
+// MessageAttachment represents a file attachment
+message MessageAttachment {
+  string attachment_id = 1;
+  string filename = 2;
+  string url = 3;
+  string proxy_url = 4;
+  int32 size_bytes = 5;
+  optional int32 width = 6;
+  optional int32 height = 7;
+  string content_type = 8;
+}
+
+// MessageType represents the type of message
+enum MessageType {
+  MESSAGE_TYPE_UNSPECIFIED = 0;
+  MESSAGE_TYPE_DEFAULT = 1;
+  MESSAGE_TYPE_RECIPIENT_ADD = 2;
+  MESSAGE_TYPE_RECIPIENT_REMOVE = 3;
+  MESSAGE_TYPE_CALL = 4;
+  MESSAGE_TYPE_CHANNEL_NAME_CHANGE = 5;
+  MESSAGE_TYPE_CHANNEL_ICON_CHANGE = 6;
+  MESSAGE_TYPE_CHANNEL_PINNED_MESSAGE = 7;
+  MESSAGE_TYPE_GUILD_MEMBER_JOIN = 8;
+  MESSAGE_TYPE_USER_PREMIUM_GUILD_SUBSCRIPTION = 9;
+  MESSAGE_TYPE_USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_1 = 10;
+  MESSAGE_TYPE_USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_2 = 11;
+  MESSAGE_TYPE_USER_PREMIUM_GUILD_SUBSCRIPTION_TIER_3 = 12;
+  MESSAGE_TYPE_CHANNEL_FOLLOW_ADD = 13;
+  MESSAGE_TYPE_GUILD_DISCOVERY_DISQUALIFIED = 14;
+  MESSAGE_TYPE_GUILD_DISCOVERY_REQUALIFIED = 15;
+  MESSAGE_TYPE_GUILD_DISCOVERY_GRACE_PERIOD_INITIAL_WARNING = 16;
+  MESSAGE_TYPE_GUILD_DISCOVERY_GRACE_PERIOD_FINAL_WARNING = 17;
+  MESSAGE_TYPE_THREAD_CREATED = 18;
+  MESSAGE_TYPE_REPLY = 19;
+  MESSAGE_TYPE_CHAT_INPUT_COMMAND = 20;
+  MESSAGE_TYPE_THREAD_STARTER_MESSAGE = 21;
+  MESSAGE_TYPE_GUILD_INVITE_REMINDER = 22;
+  MESSAGE_TYPE_CONTEXT_MENU_COMMAND = 23;
+  MESSAGE_TYPE_AUTO_MODERATION_ACTION = 24;
+}

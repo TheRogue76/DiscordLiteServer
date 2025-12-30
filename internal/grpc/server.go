@@ -10,6 +10,8 @@ import (
 	"google.golang.org/grpc/reflection"
 
 	authv1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/auth/v1"
+	channelv1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/channel/v1"
+	messagev1 "github.com/parsascontentcorner/discordliteserver/api/gen/go/discord/message/v1"
 )
 
 // Server wraps the gRPC server
@@ -21,7 +23,7 @@ type Server struct {
 }
 
 // NewServer creates a new gRPC server
-func NewServer(authService *AuthServer, port string, logger *zap.Logger) (*Server, error) {
+func NewServer(authService *AuthServer, channelService *ChannelServer, messageService *MessageServer, port string, logger *zap.Logger) (*Server, error) {
 	// Create listener - net.Listen is standard for gRPC server setup
 	lis, err := net.Listen("tcp", ":"+port) //nolint:noctx // Server initialization doesn't require context
 	if err != nil {
@@ -36,10 +38,19 @@ func NewServer(authService *AuthServer, port string, logger *zap.Logger) (*Serve
 	// Register auth service
 	authv1.RegisterAuthServiceServer(grpcServer, authService)
 
+	// Register channel service
+	channelv1.RegisterChannelServiceServer(grpcServer, channelService)
+
+	// Register message service
+	messagev1.RegisterMessageServiceServer(grpcServer, messageService)
+
 	// Register reflection service for development (allows tools like grpcurl)
 	reflection.Register(grpcServer)
 
-	logger.Info("gRPC server configured", zap.String("port", port))
+	logger.Info("gRPC server configured",
+		zap.String("port", port),
+		zap.Int("services", 3),
+	)
 
 	return &Server{
 		grpcServer: grpcServer,

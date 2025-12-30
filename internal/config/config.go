@@ -13,11 +13,13 @@ import (
 
 // Config holds all configuration for the application
 type Config struct {
-	Server   ServerConfig
-	Discord  DiscordConfig
-	Database DatabaseConfig
-	Security SecurityConfig
-	Logging  LoggingConfig
+	Server    ServerConfig
+	Discord   DiscordConfig
+	Database  DatabaseConfig
+	Security  SecurityConfig
+	Logging   LoggingConfig
+	Cache     CacheConfig
+	WebSocket WebSocketConfig
 }
 
 // ServerConfig holds server-related configuration
@@ -59,6 +61,22 @@ type SecurityConfig struct {
 type LoggingConfig struct {
 	Level  string
 	Format string
+}
+
+// CacheConfig holds cache-related configuration
+type CacheConfig struct {
+	GuildTTLHours     int
+	ChannelTTLMinutes int
+	MessageTTLMinutes int
+}
+
+// WebSocketConfig holds WebSocket-related configuration
+type WebSocketConfig struct {
+	Enabled               bool
+	MaxConnectionsPerUser int
+	HeartbeatInterval     int
+	ReconnectAttempts     int
+	ReconnectDelay        int
 }
 
 // Load loads configuration from environment variables
@@ -122,6 +140,32 @@ func Load() (*Config, error) {
 		Format: getEnv("LOG_FORMAT", "json"),
 	}
 
+	// Load Cache Config
+	guildTTL, _ := strconv.Atoi(getEnv("CACHE_GUILD_TTL_HOURS", "1"))
+	channelTTL, _ := strconv.Atoi(getEnv("CACHE_CHANNEL_TTL_MINUTES", "30"))
+	messageTTL, _ := strconv.Atoi(getEnv("CACHE_MESSAGE_TTL_MINUTES", "5"))
+
+	cfg.Cache = CacheConfig{
+		GuildTTLHours:     guildTTL,
+		ChannelTTLMinutes: channelTTL,
+		MessageTTLMinutes: messageTTL,
+	}
+
+	// Load WebSocket Config
+	wsEnabled := getEnv("WEBSOCKET_ENABLED", "true") == "true"
+	wsMaxConns, _ := strconv.Atoi(getEnv("WEBSOCKET_MAX_CONNECTIONS_PER_USER", "5"))
+	wsHeartbeat, _ := strconv.Atoi(getEnv("WEBSOCKET_HEARTBEAT_INTERVAL", "30"))
+	wsReconnectAttempts, _ := strconv.Atoi(getEnv("WEBSOCKET_RECONNECT_ATTEMPTS", "3"))
+	wsReconnectDelay, _ := strconv.Atoi(getEnv("WEBSOCKET_RECONNECT_DELAY", "5"))
+
+	cfg.WebSocket = WebSocketConfig{
+		Enabled:               wsEnabled,
+		MaxConnectionsPerUser: wsMaxConns,
+		HeartbeatInterval:     wsHeartbeat,
+		ReconnectAttempts:     wsReconnectAttempts,
+		ReconnectDelay:        wsReconnectDelay,
+	}
+
 	// Validate configuration
 	if err := cfg.Validate(); err != nil {
 		return nil, fmt.Errorf("configuration validation failed: %w", err)
@@ -173,6 +217,31 @@ func (c *Config) Validate() error {
 	validLogFormats := map[string]bool{"json": true, "console": true}
 	if !validLogFormats[c.Logging.Format] {
 		return fmt.Errorf("LOG_FORMAT must be one of: json, console")
+	}
+
+	// Validate Cache Config
+	if c.Cache.GuildTTLHours <= 0 {
+		return fmt.Errorf("CACHE_GUILD_TTL_HOURS must be positive")
+	}
+	if c.Cache.ChannelTTLMinutes <= 0 {
+		return fmt.Errorf("CACHE_CHANNEL_TTL_MINUTES must be positive")
+	}
+	if c.Cache.MessageTTLMinutes <= 0 {
+		return fmt.Errorf("CACHE_MESSAGE_TTL_MINUTES must be positive")
+	}
+
+	// Validate WebSocket Config
+	if c.WebSocket.MaxConnectionsPerUser <= 0 {
+		return fmt.Errorf("WEBSOCKET_MAX_CONNECTIONS_PER_USER must be positive")
+	}
+	if c.WebSocket.HeartbeatInterval <= 0 {
+		return fmt.Errorf("WEBSOCKET_HEARTBEAT_INTERVAL must be positive")
+	}
+	if c.WebSocket.ReconnectAttempts < 0 {
+		return fmt.Errorf("WEBSOCKET_RECONNECT_ATTEMPTS must be non-negative")
+	}
+	if c.WebSocket.ReconnectDelay <= 0 {
+		return fmt.Errorf("WEBSOCKET_RECONNECT_DELAY must be positive")
 	}
 
 	return nil

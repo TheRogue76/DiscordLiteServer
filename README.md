@@ -4,6 +4,7 @@ A high-performance Golang backend service that handles Discord OAuth authenticat
 
 ## Features
 
+### Phase 1: Authentication
 - **Discord OAuth 2.0 Authentication**: Complete OAuth flow with CSRF protection
 - **gRPC API**: Modern gRPC interface for client communication
 - **Secure Token Storage**: AES-256-GCM encryption for OAuth tokens
@@ -12,6 +13,15 @@ A high-performance Golang backend service that handles Discord OAuth authenticat
 - **Session Management**: Automatic cleanup of expired sessions
 - **Docker Support**: Full containerization with docker-compose
 - **Production Ready**: Structured logging, graceful shutdown, health checks
+
+### Phase 2: Discord Integration
+- **Guild Browsing**: Fetch user's Discord servers with smart caching
+- **Channel Access**: List channels in guilds with permission validation
+- **Message History**: Retrieve channel messages with pagination support
+- **Real-time Streaming**: WebSocket-based live message updates (server-side streaming RPC)
+- **Smart Caching**: Database-backed cache with configurable TTL (guilds: 1h, channels: 30m, messages: 5m)
+- **Rate Limiting**: Automatic Discord API rate limit handling
+- **Token Refresh**: Transparent OAuth token refresh when expired
 
 ## Architecture
 
@@ -250,6 +260,116 @@ resp, err := client.RevokeAuth(ctx, &authpb.RevokeAuthRequest{
 })
 ```
 
+### Phase 2: Channel and Message Services
+
+After authentication, you can access Discord guilds, channels, and messages.
+
+#### 4. GetGuilds - Fetch User's Discord Servers
+
+```protobuf
+rpc GetGuilds(GetGuildsRequest) returns (GetGuildsResponse);
+```
+
+**Example (Go):**
+```go
+resp, err := channelClient.GetGuilds(ctx, &channelpb.GetGuildsRequest{
+    SessionId:    sessionId,
+    ForceRefresh: false,  // Set true to bypass cache
+})
+
+for _, guild := range resp.Guilds {
+    fmt.Printf("Guild: %s (ID: %s)\n", guild.Name, guild.DiscordGuildId)
+}
+```
+
+#### 5. GetChannels - Fetch Channels for a Guild
+
+```protobuf
+rpc GetChannels(GetChannelsRequest) returns (GetChannelsResponse);
+```
+
+**Example (Go):**
+```go
+resp, err := channelClient.GetChannels(ctx, &channelpb.GetChannelsRequest{
+    SessionId:    sessionId,
+    GuildId:      guildId,      // Discord guild ID
+    ForceRefresh: false,
+})
+
+for _, channel := range resp.Channels {
+    fmt.Printf("Channel: #%s (Type: %v)\n", channel.Name, channel.Type)
+}
+```
+
+#### 6. GetMessages - Fetch Messages from a Channel
+
+```protobuf
+rpc GetMessages(GetMessagesRequest) returns (GetMessagesResponse);
+```
+
+**Example (Go):**
+```go
+resp, err := messageClient.GetMessages(ctx, &messagepb.GetMessagesRequest{
+    SessionId:    sessionId,
+    ChannelId:    channelId,    // Discord channel ID
+    Limit:        50,            // Max 100, default 50
+    Before:       "",            // Message ID for pagination
+    ForceRefresh: false,
+})
+
+for _, msg := range resp.Messages {
+    fmt.Printf("[%s] %s: %s\n",
+        time.UnixMilli(msg.Timestamp).Format("15:04"),
+        msg.Author.Username,
+        msg.Content,
+    )
+}
+
+// Pagination: fetch older messages
+if resp.HasMore {
+    oldestMsgId := resp.Messages[len(resp.Messages)-1].DiscordMessageId
+    nextResp, err := messageClient.GetMessages(ctx, &messagepb.GetMessagesRequest{
+        SessionId: sessionId,
+        ChannelId: channelId,
+        Limit:     50,
+        Before:    oldestMsgId,  // Get messages before this ID
+    })
+}
+```
+
+#### 7. StreamMessages - Real-time Message Updates (Server-side streaming)
+
+```protobuf
+rpc StreamMessages(StreamMessagesRequest) returns (stream MessageEvent);
+```
+
+**Example (Go):**
+```go
+stream, err := messageClient.StreamMessages(ctx, &messagepb.StreamMessagesRequest{
+    SessionId:  sessionId,
+    ChannelIds: []string{channelId1, channelId2},  // Subscribe to multiple channels
+})
+
+for {
+    event, err := stream.Recv()
+    if err == io.EOF {
+        break
+    }
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    switch event.EventType {
+    case messagepb.MessageEventType_MESSAGE_EVENT_TYPE_CREATE:
+        fmt.Printf("New message: %s\n", event.Message.Content)
+    case messagepb.MessageEventType_MESSAGE_EVENT_TYPE_UPDATE:
+        fmt.Printf("Message edited: %s\n", event.Message.Content)
+    case messagepb.MessageEventType_MESSAGE_EVENT_TYPE_DELETE:
+        fmt.Printf("Message deleted: %s\n", event.Message.DiscordMessageId)
+    }
+}
+```
+
 ### Swift Client (iOS/macOS)
 
 A Swift Package Manager package is available for iOS and macOS applications at the repository root:
@@ -302,13 +422,27 @@ let status = try await authService.getAuthStatus(request: statusRequest)
 # List services
 grpcurl -plaintext localhost:50051 list
 
-# Initiate auth
+# Phase 1: Authentication
 grpcurl -plaintext -d '{}' \
   localhost:50051 discord.auth.AuthService/InitAuth
 
-# Check status
 grpcurl -plaintext -d '{"session_id":"your-session-id"}' \
   localhost:50051 discord.auth.AuthService/GetAuthStatus
+
+# Phase 2: Guilds & Channels
+grpcurl -plaintext -d '{"session_id":"your-session-id"}' \
+  localhost:50051 discord.channel.v1.ChannelService/GetGuilds
+
+grpcurl -plaintext -d '{"session_id":"your-session-id","guild_id":"123456789"}' \
+  localhost:50051 discord.channel.v1.ChannelService/GetChannels
+
+# Phase 2: Messages
+grpcurl -plaintext -d '{"session_id":"your-session-id","channel_id":"123456789","limit":50}' \
+  localhost:50051 discord.message.v1.MessageService/GetMessages
+
+# Phase 2: Real-time Streaming
+grpcurl -plaintext -d '{"session_id":"your-session-id","channel_ids":["123456789"]}' \
+  localhost:50051 discord.message.v1.MessageService/StreamMessages
 ```
 
 ## Development
