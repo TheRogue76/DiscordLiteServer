@@ -25,52 +25,52 @@ const (
 type ChannelType int32
 
 const (
-	ChannelType_CHANNEL_TYPE_UNSPECIFIED          ChannelType = 0
-	ChannelType_CHANNEL_TYPE_GUILD_TEXT           ChannelType = 1
-	ChannelType_CHANNEL_TYPE_DM                   ChannelType = 2
-	ChannelType_CHANNEL_TYPE_GUILD_VOICE          ChannelType = 3
-	ChannelType_CHANNEL_TYPE_GROUP_DM             ChannelType = 4
-	ChannelType_CHANNEL_TYPE_GUILD_CATEGORY       ChannelType = 5
-	ChannelType_CHANNEL_TYPE_GUILD_NEWS           ChannelType = 6
-	ChannelType_CHANNEL_TYPE_GUILD_STORE          ChannelType = 7
-	ChannelType_CHANNEL_TYPE_GUILD_NEWS_THREAD    ChannelType = 10
+	ChannelType_CHANNEL_TYPE_GUILD_TEXT           ChannelType = 0
+	ChannelType_CHANNEL_TYPE_DM                   ChannelType = 1
+	ChannelType_CHANNEL_TYPE_GUILD_VOICE          ChannelType = 2
+	ChannelType_CHANNEL_TYPE_GROUP_DM             ChannelType = 3
+	ChannelType_CHANNEL_TYPE_GUILD_CATEGORY       ChannelType = 4
+	ChannelType_CHANNEL_TYPE_GUILD_ANNOUNCEMENT   ChannelType = 5
+	ChannelType_CHANNEL_TYPE_ANNOUNCEMENT_THREAD  ChannelType = 10
 	ChannelType_CHANNEL_TYPE_GUILD_PUBLIC_THREAD  ChannelType = 11
 	ChannelType_CHANNEL_TYPE_GUILD_PRIVATE_THREAD ChannelType = 12
 	ChannelType_CHANNEL_TYPE_GUILD_STAGE_VOICE    ChannelType = 13
+	ChannelType_CHANNEL_TYPE_GUILD_DIRECTORY      ChannelType = 14
 	ChannelType_CHANNEL_TYPE_GUILD_FORUM          ChannelType = 15
+	ChannelType_CHANNEL_TYPE_GUILD_MEDIA          ChannelType = 16
 )
 
 // Enum value maps for ChannelType.
 var (
 	ChannelType_name = map[int32]string{
-		0:  "CHANNEL_TYPE_UNSPECIFIED",
-		1:  "CHANNEL_TYPE_GUILD_TEXT",
-		2:  "CHANNEL_TYPE_DM",
-		3:  "CHANNEL_TYPE_GUILD_VOICE",
-		4:  "CHANNEL_TYPE_GROUP_DM",
-		5:  "CHANNEL_TYPE_GUILD_CATEGORY",
-		6:  "CHANNEL_TYPE_GUILD_NEWS",
-		7:  "CHANNEL_TYPE_GUILD_STORE",
-		10: "CHANNEL_TYPE_GUILD_NEWS_THREAD",
+		0:  "CHANNEL_TYPE_GUILD_TEXT",
+		1:  "CHANNEL_TYPE_DM",
+		2:  "CHANNEL_TYPE_GUILD_VOICE",
+		3:  "CHANNEL_TYPE_GROUP_DM",
+		4:  "CHANNEL_TYPE_GUILD_CATEGORY",
+		5:  "CHANNEL_TYPE_GUILD_ANNOUNCEMENT",
+		10: "CHANNEL_TYPE_ANNOUNCEMENT_THREAD",
 		11: "CHANNEL_TYPE_GUILD_PUBLIC_THREAD",
 		12: "CHANNEL_TYPE_GUILD_PRIVATE_THREAD",
 		13: "CHANNEL_TYPE_GUILD_STAGE_VOICE",
+		14: "CHANNEL_TYPE_GUILD_DIRECTORY",
 		15: "CHANNEL_TYPE_GUILD_FORUM",
+		16: "CHANNEL_TYPE_GUILD_MEDIA",
 	}
 	ChannelType_value = map[string]int32{
-		"CHANNEL_TYPE_UNSPECIFIED":          0,
-		"CHANNEL_TYPE_GUILD_TEXT":           1,
-		"CHANNEL_TYPE_DM":                   2,
-		"CHANNEL_TYPE_GUILD_VOICE":          3,
-		"CHANNEL_TYPE_GROUP_DM":             4,
-		"CHANNEL_TYPE_GUILD_CATEGORY":       5,
-		"CHANNEL_TYPE_GUILD_NEWS":           6,
-		"CHANNEL_TYPE_GUILD_STORE":          7,
-		"CHANNEL_TYPE_GUILD_NEWS_THREAD":    10,
+		"CHANNEL_TYPE_GUILD_TEXT":           0,
+		"CHANNEL_TYPE_DM":                   1,
+		"CHANNEL_TYPE_GUILD_VOICE":          2,
+		"CHANNEL_TYPE_GROUP_DM":             3,
+		"CHANNEL_TYPE_GUILD_CATEGORY":       4,
+		"CHANNEL_TYPE_GUILD_ANNOUNCEMENT":   5,
+		"CHANNEL_TYPE_ANNOUNCEMENT_THREAD":  10,
 		"CHANNEL_TYPE_GUILD_PUBLIC_THREAD":  11,
 		"CHANNEL_TYPE_GUILD_PRIVATE_THREAD": 12,
 		"CHANNEL_TYPE_GUILD_STAGE_VOICE":    13,
+		"CHANNEL_TYPE_GUILD_DIRECTORY":      14,
 		"CHANNEL_TYPE_GUILD_FORUM":          15,
+		"CHANNEL_TYPE_GUILD_MEDIA":          16,
 	}
 )
 
@@ -477,7 +477,7 @@ func (x *Channel) GetType() ChannelType {
 	if x != nil {
 		return x.Type
 	}
-	return ChannelType_CHANNEL_TYPE_UNSPECIFIED
+	return ChannelType_CHANNEL_TYPE_GUILD_TEXT
 }
 
 func (x *Channel) GetPosition() int32 {
@@ -553,22 +553,22 @@ const file_discord_channel_v1_channel_proto_rawDesc = "" +
 	"\tparent_id\x18\x06 \x01(\tR\bparentId\x12\x14\n" +
 	"\x05topic\x18\a \x01(\tR\x05topic\x12\x12\n" +
 	"\x04nsfw\x18\b \x01(\bR\x04nsfw\x12&\n" +
-	"\x0flast_message_id\x18\t \x01(\tR\rlastMessageId*\xa5\x03\n" +
-	"\vChannelType\x12\x1c\n" +
-	"\x18CHANNEL_TYPE_UNSPECIFIED\x10\x00\x12\x1b\n" +
-	"\x17CHANNEL_TYPE_GUILD_TEXT\x10\x01\x12\x13\n" +
-	"\x0fCHANNEL_TYPE_DM\x10\x02\x12\x1c\n" +
-	"\x18CHANNEL_TYPE_GUILD_VOICE\x10\x03\x12\x19\n" +
-	"\x15CHANNEL_TYPE_GROUP_DM\x10\x04\x12\x1f\n" +
-	"\x1bCHANNEL_TYPE_GUILD_CATEGORY\x10\x05\x12\x1b\n" +
-	"\x17CHANNEL_TYPE_GUILD_NEWS\x10\x06\x12\x1c\n" +
-	"\x18CHANNEL_TYPE_GUILD_STORE\x10\a\x12\"\n" +
-	"\x1eCHANNEL_TYPE_GUILD_NEWS_THREAD\x10\n" +
+	"\x0flast_message_id\x18\t \x01(\tR\rlastMessageId*\xb3\x03\n" +
+	"\vChannelType\x12\x1b\n" +
+	"\x17CHANNEL_TYPE_GUILD_TEXT\x10\x00\x12\x13\n" +
+	"\x0fCHANNEL_TYPE_DM\x10\x01\x12\x1c\n" +
+	"\x18CHANNEL_TYPE_GUILD_VOICE\x10\x02\x12\x19\n" +
+	"\x15CHANNEL_TYPE_GROUP_DM\x10\x03\x12\x1f\n" +
+	"\x1bCHANNEL_TYPE_GUILD_CATEGORY\x10\x04\x12#\n" +
+	"\x1fCHANNEL_TYPE_GUILD_ANNOUNCEMENT\x10\x05\x12$\n" +
+	" CHANNEL_TYPE_ANNOUNCEMENT_THREAD\x10\n" +
 	"\x12$\n" +
 	" CHANNEL_TYPE_GUILD_PUBLIC_THREAD\x10\v\x12%\n" +
 	"!CHANNEL_TYPE_GUILD_PRIVATE_THREAD\x10\f\x12\"\n" +
-	"\x1eCHANNEL_TYPE_GUILD_STAGE_VOICE\x10\r\x12\x1c\n" +
-	"\x18CHANNEL_TYPE_GUILD_FORUM\x10\x0f2\xca\x01\n" +
+	"\x1eCHANNEL_TYPE_GUILD_STAGE_VOICE\x10\r\x12 \n" +
+	"\x1cCHANNEL_TYPE_GUILD_DIRECTORY\x10\x0e\x12\x1c\n" +
+	"\x18CHANNEL_TYPE_GUILD_FORUM\x10\x0f\x12\x1c\n" +
+	"\x18CHANNEL_TYPE_GUILD_MEDIA\x10\x102\xca\x01\n" +
 	"\x0eChannelService\x12X\n" +
 	"\tGetGuilds\x12$.discord.channel.v1.GetGuildsRequest\x1a%.discord.channel.v1.GetGuildsResponse\x12^\n" +
 	"\vGetChannels\x12&.discord.channel.v1.GetChannelsRequest\x1a'.discord.channel.v1.GetChannelsResponseB\xea\x01\n" +

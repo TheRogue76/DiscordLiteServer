@@ -54,6 +54,7 @@ func TestLoadConfigSuccess(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "test_client_id_123",
 		"DISCORD_CLIENT_SECRET": "test_client_secret_456",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/auth/callback",
+		"DISCORD_BOT_TOKEN":     "test_bot_token_xyz789",
 		"DB_PASSWORD":           "test_db_password",
 		"TOKEN_ENCRYPTION_KEY":  "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef", // 64 hex chars = 32 bytes
 		"HTTP_PORT":             "9090",
@@ -72,6 +73,7 @@ func TestLoadConfigSuccess(t *testing.T) {
 	assert.Equal(t, "test_client_id_123", cfg.Discord.ClientID)
 	assert.Equal(t, "test_client_secret_456", cfg.Discord.ClientSecret)
 	assert.Equal(t, "http://localhost:8080/auth/callback", cfg.Discord.RedirectURI)
+	assert.Equal(t, "test_bot_token_xyz789", cfg.Discord.BotToken)
 	assert.Equal(t, []string{"identify", "email", "guilds"}, cfg.Discord.Scopes)
 
 	// Verify Server config
@@ -112,6 +114,7 @@ func TestLoadConfigMissingRequired(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validEncryptionKey,
 			},
@@ -123,6 +126,7 @@ func TestLoadConfigMissingRequired(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validEncryptionKey,
 			},
@@ -134,10 +138,23 @@ func TestLoadConfigMissingRequired(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validEncryptionKey,
 			},
 			expectedErr: "DISCORD_REDIRECT_URI is required",
+		},
+		{
+			name: "missing DISCORD_BOT_TOKEN",
+			envVars: map[string]string{
+				"DISCORD_CLIENT_ID":     "client_id",
+				"DISCORD_CLIENT_SECRET": "secret",
+				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "",
+				"DB_PASSWORD":           "password",
+				"TOKEN_ENCRYPTION_KEY":  validEncryptionKey,
+			},
+			expectedErr: "DISCORD_BOT_TOKEN is required",
 		},
 		{
 			name: "missing DB_PASSWORD",
@@ -145,6 +162,7 @@ func TestLoadConfigMissingRequired(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "",
 				"TOKEN_ENCRYPTION_KEY":  validEncryptionKey,
 			},
@@ -200,6 +218,7 @@ func TestLoadConfigInvalidEncryptionKey(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  tt.encryptionKey,
 			})
@@ -221,6 +240,7 @@ func TestValidateEncryptionKey(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 	})
@@ -267,6 +287,7 @@ func TestValidateSessionExpiry(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validKey,
 				"SESSION_EXPIRY_HOURS":  tt.hours,
@@ -321,6 +342,7 @@ func TestValidateStateExpiry(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validKey,
 				"STATE_EXPIRY_MINUTES":  tt.minutes,
@@ -363,6 +385,7 @@ func TestValidateLogLevel(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validKey,
 				"LOG_LEVEL":             tt.level,
@@ -404,6 +427,7 @@ func TestValidateLogFormat(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validKey,
 				"LOG_FORMAT":            tt.format,
@@ -449,6 +473,7 @@ func TestDefaultValues(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 		// Unset all optional fields to test defaults
@@ -508,6 +533,7 @@ func TestCustomDatabaseConnections(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 		"DB_MAX_OPEN_CONNS":     "50",
@@ -529,6 +555,7 @@ func TestCustomScopes(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 		"DISCORD_OAUTH_SCOPES":  "identify guilds guilds.members.read",
@@ -550,6 +577,7 @@ func TestCacheConfigDefaults(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 	})
@@ -571,6 +599,7 @@ func TestCacheConfigCustomValues(t *testing.T) {
 		"DISCORD_CLIENT_ID":         "client_id",
 		"DISCORD_CLIENT_SECRET":     "secret",
 		"DISCORD_REDIRECT_URI":      "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":         "bot_token",
 		"DB_PASSWORD":               "password",
 		"TOKEN_ENCRYPTION_KEY":      validKey,
 		"CACHE_GUILD_TTL_HOURS":     "2",
@@ -637,6 +666,7 @@ func TestValidateCacheTTL(t *testing.T) {
 				"DISCORD_CLIENT_ID":         "client_id",
 				"DISCORD_CLIENT_SECRET":     "secret",
 				"DISCORD_REDIRECT_URI":      "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":         "bot_token",
 				"DB_PASSWORD":               "password",
 				"TOKEN_ENCRYPTION_KEY":      validKey,
 				"CACHE_GUILD_TTL_HOURS":     tt.guildTTL,
@@ -668,6 +698,7 @@ func TestWebSocketConfigDefaults(t *testing.T) {
 		"DISCORD_CLIENT_ID":     "client_id",
 		"DISCORD_CLIENT_SECRET": "secret",
 		"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":     "bot_token",
 		"DB_PASSWORD":           "password",
 		"TOKEN_ENCRYPTION_KEY":  validKey,
 	})
@@ -691,6 +722,7 @@ func TestWebSocketConfigCustomValues(t *testing.T) {
 		"DISCORD_CLIENT_ID":                  "client_id",
 		"DISCORD_CLIENT_SECRET":              "secret",
 		"DISCORD_REDIRECT_URI":               "http://localhost:8080/callback",
+		"DISCORD_BOT_TOKEN":                  "bot_token",
 		"DB_PASSWORD":                        "password",
 		"TOKEN_ENCRYPTION_KEY":               validKey,
 		"WEBSOCKET_ENABLED":                  "false",
@@ -783,6 +815,7 @@ func TestValidateWebSocketConfig(t *testing.T) {
 				"DISCORD_CLIENT_ID":                  "client_id",
 				"DISCORD_CLIENT_SECRET":              "secret",
 				"DISCORD_REDIRECT_URI":               "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":                  "bot_token",
 				"DB_PASSWORD":                        "password",
 				"TOKEN_ENCRYPTION_KEY":               validKey,
 				"WEBSOCKET_MAX_CONNECTIONS_PER_USER": tt.maxConns,
@@ -827,6 +860,7 @@ func TestWebSocketEnabledParsing(t *testing.T) {
 				"DISCORD_CLIENT_ID":     "client_id",
 				"DISCORD_CLIENT_SECRET": "secret",
 				"DISCORD_REDIRECT_URI":  "http://localhost:8080/callback",
+				"DISCORD_BOT_TOKEN":     "bot_token",
 				"DB_PASSWORD":           "password",
 				"TOKEN_ENCRYPTION_KEY":  validKey,
 			}

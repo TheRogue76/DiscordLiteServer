@@ -39,7 +39,8 @@ services:
       DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID}
       DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET}
       DISCORD_REDIRECT_URI: http://localhost:8080/auth/callback
-      DISCORD_OAUTH_SCOPES: identify email guilds
+      DISCORD_OAUTH_SCOPES: identify email guilds bot
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN}
 
       # PostgreSQL Configuration
       DB_HOST: postgres
