@@ -56,6 +56,7 @@ func setupChannelServiceTest(t *testing.T) *testChannelService {
 			ClientSecret: "test_client_secret",
 			RedirectURI:  "http://localhost:8080/callback",
 			Scopes:       []string{"identify", "guilds"},
+			BotToken:     "test_bot_token",
 		},
 		Security: config.SecurityConfig{
 			TokenEncryptionKey: []byte("12345678901234567890123456789012"), // 32 bytes
