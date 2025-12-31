@@ -174,6 +174,7 @@ func setupTestSuite(t *testing.T) *TestSuite {
 			ClientSecret: "test_secret",
 			RedirectURI:  mockDiscord.URL + "/callback",
 			Scopes:       []string{"identify", "guilds", "messages.read"},
+			BotToken:     "test_bot_token",
 		},
 		Security: config.SecurityConfig{
 			TokenEncryptionKey: []byte("12345678901234567890123456789012"),

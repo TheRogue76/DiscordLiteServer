@@ -23,78 +23,78 @@ fileprivate struct _GeneratedWithProtocGenSwiftVersion: SwiftProtobuf.ProtobufAP
 /// ChannelType represents the type of Discord channel
 public enum Discord_Channel_V1_ChannelType: SwiftProtobuf.Enum, Swift.CaseIterable {
   public typealias RawValue = Int
-  case unspecified // = 0
-  case guildText // = 1
-  case dm // = 2
-  case guildVoice // = 3
-  case groupDm // = 4
-  case guildCategory // = 5
-  case guildNews // = 6
-  case guildStore // = 7
-  case guildNewsThread // = 10
+  case guildText // = 0
+  case dm // = 1
+  case guildVoice // = 2
+  case groupDm // = 3
+  case guildCategory // = 4
+  case guildAnnouncement // = 5
+  case announcementThread // = 10
   case guildPublicThread // = 11
   case guildPrivateThread // = 12
   case guildStageVoice // = 13
+  case guildDirectory // = 14
   case guildForum // = 15
+  case guildMedia // = 16
   case UNRECOGNIZED(Int)
 
   public init() {
-    self = .unspecified
+    self = .guildText
   }
 
   public init?(rawValue: Int) {
     switch rawValue {
-    case 0: self = .unspecified
-    case 1: self = .guildText
-    case 2: self = .dm
-    case 3: self = .guildVoice
-    case 4: self = .groupDm
-    case 5: self = .guildCategory
-    case 6: self = .guildNews
-    case 7: self = .guildStore
-    case 10: self = .guildNewsThread
+    case 0: self = .guildText
+    case 1: self = .dm
+    case 2: self = .guildVoice
+    case 3: self = .groupDm
+    case 4: self = .guildCategory
+    case 5: self = .guildAnnouncement
+    case 10: self = .announcementThread
     case 11: self = .guildPublicThread
     case 12: self = .guildPrivateThread
     case 13: self = .guildStageVoice
+    case 14: self = .guildDirectory
     case 15: self = .guildForum
+    case 16: self = .guildMedia
     default: self = .UNRECOGNIZED(rawValue)
     }
   }
 
   public var rawValue: Int {
     switch self {
-    case .unspecified: return 0
-    case .guildText: return 1
-    case .dm: return 2
-    case .guildVoice: return 3
-    case .groupDm: return 4
-    case .guildCategory: return 5
-    case .guildNews: return 6
-    case .guildStore: return 7
-    case .guildNewsThread: return 10
+    case .guildText: return 0
+    case .dm: return 1
+    case .guildVoice: return 2
+    case .groupDm: return 3
+    case .guildCategory: return 4
+    case .guildAnnouncement: return 5
+    case .announcementThread: return 10
     case .guildPublicThread: return 11
     case .guildPrivateThread: return 12
     case .guildStageVoice: return 13
+    case .guildDirectory: return 14
     case .guildForum: return 15
+    case .guildMedia: return 16
     case .UNRECOGNIZED(let i): return i
     }
   }
 
   // The compiler won't synthesize support with the UNRECOGNIZED case.
   public static let allCases: [Discord_Channel_V1_ChannelType] = [
-    .unspecified,
     .guildText,
     .dm,
     .guildVoice,
     .groupDm,
     .guildCategory,
-    .guildNews,
-    .guildStore,
-    .guildNewsThread,
+    .guildAnnouncement,
+    .announcementThread,
     .guildPublicThread,
     .guildPrivateThread,
     .guildStageVoice,
+    .guildDirectory,
     .guildForum,
+    .guildMedia,
   ]
 
 }
@@ -203,7 +203,7 @@ public struct Discord_Channel_V1_Channel: Sendable {
 
   public var name: String = String()
 
-  public var type: Discord_Channel_V1_ChannelType = .unspecified
+  public var type: Discord_Channel_V1_ChannelType = .guildText
 
   public var position: Int32 = 0
 
@@ -225,7 +225,7 @@ public struct Discord_Channel_V1_Channel: Sendable {
 fileprivate let _protobuf_package = "discord.channel.v1"
 
 extension Discord_Channel_V1_ChannelType: SwiftProtobuf._ProtoNameProviding {
-  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0CHANNEL_TYPE_UNSPECIFIED\0\u{1}CHANNEL_TYPE_GUILD_TEXT\0\u{1}CHANNEL_TYPE_DM\0\u{1}CHANNEL_TYPE_GUILD_VOICE\0\u{1}CHANNEL_TYPE_GROUP_DM\0\u{1}CHANNEL_TYPE_GUILD_CATEGORY\0\u{1}CHANNEL_TYPE_GUILD_NEWS\0\u{1}CHANNEL_TYPE_GUILD_STORE\0\u{2}\u{3}CHANNEL_TYPE_GUILD_NEWS_THREAD\0\u{1}CHANNEL_TYPE_GUILD_PUBLIC_THREAD\0\u{1}CHANNEL_TYPE_GUILD_PRIVATE_THREAD\0\u{1}CHANNEL_TYPE_GUILD_STAGE_VOICE\0\u{2}\u{2}CHANNEL_TYPE_GUILD_FORUM\0")
+  public static let _protobuf_nameMap = SwiftProtobuf._NameMap(bytecode: "\0\u{2}\0CHANNEL_TYPE_GUILD_TEXT\0\u{1}CHANNEL_TYPE_DM\0\u{1}CHANNEL_TYPE_GUILD_VOICE\0\u{1}CHANNEL_TYPE_GROUP_DM\0\u{1}CHANNEL_TYPE_GUILD_CATEGORY\0\u{1}CHANNEL_TYPE_GUILD_ANNOUNCEMENT\0\u{2}\u{5}CHANNEL_TYPE_ANNOUNCEMENT_THREAD\0\u{1}CHANNEL_TYPE_GUILD_PUBLIC_THREAD\0\u{1}CHANNEL_TYPE_GUILD_PRIVATE_THREAD\0\u{1}CHANNEL_TYPE_GUILD_STAGE_VOICE\0\u{1}CHANNEL_TYPE_GUILD_DIRECTORY\0\u{1}CHANNEL_TYPE_GUILD_FORUM\0\u{1}CHANNEL_TYPE_GUILD_MEDIA\0")
 }
 
 extension Discord_Channel_V1_GetGuildsRequest: SwiftProtobuf.Message, SwiftProtobuf._MessageImplementationBase, SwiftProtobuf._ProtoNameProviding {
@@ -462,7 +462,7 @@ extension Discord_Channel_V1_Channel: SwiftProtobuf.Message, SwiftProtobuf._Mess
     if !self.name.isEmpty {
       try visitor.visitSingularStringField(value: self.name, fieldNumber: 3)
     }
-    if self.type != .unspecified {
+    if self.type != .guildText {
       try visitor.visitSingularEnumField(value: self.type, fieldNumber: 4)
     }
     if self.position != 0 {

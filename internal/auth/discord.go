@@ -101,6 +101,7 @@ type DiscordClient struct {
 	logger        *zap.Logger
 	baseURL       string // Discord API base URL (configurable for testing)
 	rateLimiter   *ratelimit.RateLimiter
+	botToken      string // Bot token for Discord API access (guild channels, messages, gateway)
 }
 
 // NewDiscordClient creates a new Discord OAuth client
@@ -121,6 +122,7 @@ func NewDiscordClient(cfg *config.Config, logger *zap.Logger) *DiscordClient {
 		encryptionKey: cfg.Security.TokenEncryptionKey,
 		logger:        logger,
 		baseURL:       discordAPIEndpoint,
+		botToken:      cfg.Discord.BotToken,
 	}
 }
 
@@ -380,9 +382,9 @@ func (dc *DiscordClient) GetUserGuilds(ctx context.Context, accessToken string) 
 }
 
 // GetGuildChannels fetches channels for a guild from Discord API
-func (dc *DiscordClient) GetGuildChannels(ctx context.Context, accessToken, guildID string) ([]*DiscordChannel, error) {
+func (dc *DiscordClient) GetGuildChannels(ctx context.Context, guildID string) ([]*DiscordChannel, error) {
 	endpoint := "/guilds/" + guildID + "/channels"
-	resp, err := dc.makeAPIRequest(ctx, "GET", endpoint, accessToken)
+	resp, err := dc.makeAPIRequestWithBot(ctx, "GET", endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -445,4 +447,49 @@ func (dc *DiscordClient) GetChannelMessages(ctx context.Context, accessToken, ch
 	)
 
 	return messages, nil
+}
+
+// makeAPIRequestWithBot makes a rate-limited HTTP request using bot token
+// This method is similar to makeAPIRequest but uses the bot token instead of user OAuth token
+func (dc *DiscordClient) makeAPIRequestWithBot(ctx context.Context, method, endpoint string) (*http.Response, error) {
+	if dc.botToken == "" {
+		return nil, fmt.Errorf("bot token is not configured")
+	}
+
+	// Wait for rate limit if limiter is set
+	if dc.rateLimiter != nil {
+		if err := dc.rateLimiter.Wait(endpoint); err != nil {
+			return nil, fmt.Errorf("rate limit wait failed: %w", err)
+		}
+	}
+
+	req, err := http.NewRequestWithContext(ctx, method, dc.baseURL+endpoint, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create request: %w", err)
+	}
+
+	// CRITICAL: Bot tokens use "Bot" prefix, not "Bearer"
+	req.Header.Set("Authorization", "Bot "+dc.botToken)
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make request: %w", err)
+	}
+
+	// Update rate limit info from headers
+	if dc.rateLimiter != nil {
+		dc.rateLimiter.UpdateFromHeaders(endpoint, resp.Header)
+	}
+
+	// Handle rate limiting
+	if resp.StatusCode == http.StatusTooManyRequests {
+		defer func() { _ = resp.Body.Close() }()
+		if dc.rateLimiter != nil {
+			_ = dc.rateLimiter.HandleRateLimitResponse(endpoint, resp.Header)
+		}
+		return nil, fmt.Errorf("rate limited by Discord API")
+	}
+
+	return resp, nil
 }

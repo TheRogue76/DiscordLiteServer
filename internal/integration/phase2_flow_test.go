@@ -121,7 +121,7 @@ func TestPhase2_GetChannels_FullFlow(t *testing.T) {
 			"id":       "channel1",
 			"guild_id": guildID,
 			"name":     "general",
-			"type":     1, // GUILD_TEXT
+			"type":     0, // GUILD_TEXT
 			"position": 0,
 			"topic":    "General discussion",
 			"nsfw":     false,

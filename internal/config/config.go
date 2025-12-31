@@ -36,6 +36,7 @@ type DiscordConfig struct {
 	ClientSecret string
 	RedirectURI  string
 	Scopes       []string
+	BotToken     string // Bot token for Discord API access (guild channels, messages, gateway)
 }
 
 // DatabaseConfig holds database connection configuration
@@ -101,6 +102,7 @@ func Load() (*Config, error) {
 		ClientSecret: getEnv("DISCORD_CLIENT_SECRET", ""),
 		RedirectURI:  getEnv("DISCORD_REDIRECT_URI", ""),
 		Scopes:       strings.Split(getEnv("DISCORD_OAUTH_SCOPES", "identify email guilds"), " "),
+		BotToken:     getEnv("DISCORD_BOT_TOKEN", ""),
 	}
 
 	// Load Database Config
@@ -185,6 +187,9 @@ func (c *Config) Validate() error {
 	}
 	if c.Discord.RedirectURI == "" {
 		return fmt.Errorf("DISCORD_REDIRECT_URI is required")
+	}
+	if c.Discord.BotToken == "" {
+		return fmt.Errorf("DISCORD_BOT_TOKEN is required")
 	}
 
 	// Validate Database Config
