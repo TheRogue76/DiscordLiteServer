@@ -382,7 +382,7 @@ func (dc *DiscordClient) GetUserGuilds(ctx context.Context, accessToken string) 
 }
 
 // GetGuildChannels fetches channels for a guild from Discord API
-func (dc *DiscordClient) GetGuildChannels(ctx context.Context, accessToken, guildID string) ([]*DiscordChannel, error) {
+func (dc *DiscordClient) GetGuildChannels(ctx context.Context, guildID string) ([]*DiscordChannel, error) {
 	endpoint := "/guilds/" + guildID + "/channels"
 	resp, err := dc.makeAPIRequestWithBot(ctx, "GET", endpoint)
 	if err != nil {

@@ -195,40 +195,21 @@ func (s *ChannelServer) GetChannels(ctx context.Context, req *channelv1.GetChann
 		}
 	}
 
-	// 4. Get OAuth token and refresh if needed
-	oauthToken, err := s.db.GetOAuthToken(ctx, userID)
-	if err != nil {
-		s.logger.Error("failed to get OAuth token", zap.Error(err))
-		return nil, status.Errorf(codes.Internal, "failed to get OAuth token")
-	}
-
-	accessToken, wasRefreshed, err := s.discordClient.RefreshIfNeeded(ctx, oauthToken)
-	if err != nil {
-		s.logger.Error("failed to refresh token", zap.Error(err))
-		return nil, status.Errorf(codes.Unauthenticated, "failed to refresh OAuth token")
-	}
-
-	if wasRefreshed {
-		if err := s.db.StoreOAuthToken(ctx, oauthToken); err != nil {
-			s.logger.Error("failed to update refreshed token", zap.Error(err))
-		}
-	}
-
-	// 5. Fetch channels from Discord API
-	discordChannels, err := s.discordClient.GetGuildChannels(ctx, accessToken, req.GuildId)
+	// 4. Fetch channels from Discord API
+	discordChannels, err := s.discordClient.GetGuildChannels(ctx, req.GuildId)
 	if err != nil {
 		s.logger.Error("failed to fetch channels from Discord", zap.Error(err))
 		return nil, status.Errorf(codes.Internal, "failed to fetch channels from Discord API")
 	}
 
-	// 6. Get guild internal ID
+	// 5. Get guild internal ID
 	guild, err := s.db.GetGuildByDiscordID(ctx, req.GuildId)
 	if err != nil {
 		s.logger.Error("failed to get guild", zap.Error(err))
 		return nil, status.Errorf(codes.Internal, "guild not found in database")
 	}
 
-	// 7. Store channels in database
+	// 6. Store channels in database
 	var storedChannels []*models.Channel
 	for _, dc := range discordChannels {
 		channel := &models.Channel{
@@ -251,7 +232,7 @@ func (s *ChannelServer) GetChannels(ctx context.Context, req *channelv1.GetChann
 		storedChannels = append(storedChannels, channel)
 	}
 
-	// 8. Update cache metadata
+	// 7. Update cache metadata
 	if err := s.cacheManager.SetChannelCache(ctx, req.GuildId, userID); err != nil {
 		s.logger.Warn("failed to set channel cache", zap.Error(err))
 	}
